@@ -34,6 +34,7 @@ type alias Model =
     , loaded : List ( Float, Float )
     , volume : Float
     , muted : Bool
+    , isFullscreen : Bool
     }
 
 
@@ -41,17 +42,30 @@ type Msg
     = Noop
     | PlayPause
     | Seek Float
+    | RequestFullscreen
+    | ExitFullscreen
     | NowPlaying
     | NowPaused
     | NowHasDuration Float
     | NowAtPosition Float
     | NowAtVolume Float Bool
     | NowLoaded (List ( Float, Float ))
+    | NowIsFullscreen Bool
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model "video/manifest.m3u8" False 0.0 1.0 [] 1.0 False, initVideo () )
+    ( Model
+        "video/manifest.m3u8"
+        False
+        0.0
+        1.0
+        []
+        1.0
+        False
+        False
+    , initVideo ()
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -65,6 +79,12 @@ update msg model =
 
         Seek ratio ->
             ( model, seek (ratio * model.duration) )
+
+        RequestFullscreen ->
+            ( model, requestFullscreen () )
+
+        ExitFullscreen ->
+            ( model, exitFullscreen () )
 
         NowPlaying ->
             ( { model | playing = True }, Cmd.none )
@@ -83,6 +103,9 @@ update msg model =
 
         NowLoaded loaded ->
             ( { model | loaded = loaded }, Cmd.none )
+
+        NowIsFullscreen fullscreen ->
+            ( { model | isFullscreen = fullscreen }, Cmd.none )
 
 
 view : Model -> Browser.Document Msg
@@ -178,13 +201,15 @@ video model =
                     , Element.el [ Element.width (Element.fillPortion remaining) ] Element.none
                     ]
                 , Element.row
-                    [ Element.spacing 10 ]
+                    [ Element.spacing 10, Element.width Element.fill ]
                     [ playPauseButton model.playing
                     , Element.el [ Element.moveDown 2.5 ] (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
+                    , Element.row [ Element.spacing 10, Element.alignRight ]
+                        [ fullscreenButton model.isFullscreen ]
                     ]
                 ]
     in
-    Element.el [ Element.inFront bar, Element.width (Element.px 1000) ]
+    Element.el (Element.inFront bar :: Element.width (Element.px 1000) :: Element.htmlAttribute (Html.Attributes.id "full") :: playerEvents)
         (Element.html (Html.video videoEvents []))
 
 
@@ -202,6 +227,28 @@ playPauseButton playing =
         { label = icon
         , onPress = Just PlayPause
         }
+
+
+fullscreenButton : Bool -> Element Msg
+fullscreenButton isFullscreen =
+    Input.button []
+        (if isFullscreen then
+            { label = Icons.minimize False
+            , onPress = Just ExitFullscreen
+            }
+
+         else
+            { label = Icons.maximize False
+            , onPress = Just RequestFullscreen
+            }
+        )
+
+
+playerEvents : List (Element.Attribute Msg)
+playerEvents =
+    List.map Element.htmlAttribute
+        [ Html.Events.on "fullscreenchange" decodeFullscreenChange
+        ]
 
 
 videoEvents : List (Html.Attribute Msg)
@@ -254,12 +301,11 @@ decodeSeek =
 
 decodeProgress : Decode.Decoder Msg
 decodeProgress =
-    Decode.map NowLoaded
-        (Dom.target <|
-            Decode.field "buffered" <|
-                Decode.field "asArray" <|
-                    decodeTimeRanges
-        )
+    decodeTimeRanges
+        |> Decode.field "asArray"
+        |> Decode.field "buffered"
+        |> Dom.target
+        |> Decode.map NowLoaded
 
 
 decodeTimeRanges : Decode.Decoder (List ( Float, Float ))
@@ -272,6 +318,16 @@ decodeTimeRange =
     Decode.map2 (\x y -> ( x, y ))
         (Decode.field "start" Decode.float)
         (Decode.field "end" Decode.float)
+
+
+decodeFullscreenChange : Decode.Decoder Msg
+decodeFullscreenChange =
+    Decode.value
+        |> Decode.nullable
+        |> Decode.field "fullscreenElement"
+        |> Decode.field "document"
+        |> Dom.target
+        |> Decode.map (\x -> NowIsFullscreen (x /= Nothing))
 
 
 every : Float -> List ( Float, Float ) -> List ( Float, Float, Bool )
@@ -338,3 +394,9 @@ port playPause : () -> Cmd msg
 
 
 port seek : Float -> Cmd msg
+
+
+port requestFullscreen : () -> Cmd msg
+
+
+port exitFullscreen : () -> Cmd msg

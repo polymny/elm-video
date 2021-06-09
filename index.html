@@ -25,6 +25,12 @@
                 }
             });
 
+            Object.defineProperty(HTMLElement.prototype, "document", {
+                get: function() {
+                    return document;
+                }
+            });
+
             var app = Elm.Main.init({
                 node: document.getElementById('container'),
             });
@@ -80,6 +86,14 @@
             app.ports.seek.subscribe(function(arg) {
                 const video = document.getElementById('video');
                 video.currentTime = arg;
+            });
+
+            app.ports.requestFullscreen.subscribe(function() {
+                document.getElementById('full').requestFullscreen();
+            });
+
+            app.ports.exitFullscreen.subscribe(function() {
+                document.exitFullscreen();
             });
         </script>
     </body>
