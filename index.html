@@ -1,0 +1,81 @@
+<!doctype HTML>
+<html>
+    <head>
+        <title>twitch.tforgione.fr</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+        <div id="container"></div>
+        <script src="https://cdn.rawgit.com/video-dev/hls.js/18bb552/dist/hls.min.js"></script>
+        <script src="js/main.js"></script>
+        <script>
+            Object.defineProperty(TimeRanges.prototype, "asArray", {
+                get: function() {
+                    var ret = [];
+                    for (var i = 0; i < this.length; i++) {
+                        ret.push({start: this.start(i), end: this.end(i)});
+                    }
+                    return ret;
+                }
+            });
+
+            var app = Elm.Main.init({
+                node: document.getElementById('container'),
+            });
+
+            app.ports.initVideo.subscribe(function() {
+                const video = document.getElementById('video');
+                const hls = new Hls();
+                hls.loadSource('video/manifest.m3u8');
+
+                hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
+                    // Transform available levels into an array of integers (height values).
+                    const availableQualities = hls.levels.map((l) => l.height);
+                    availableQualities.unshift(0);
+                });
+
+                hls.on(Hls.Events.LEVEL_SWITCHED, function (event, data) {
+                    // var span = document.querySelector(".plyr__menu__container [data-plyr='quality'][value='0'] span");
+                    // if (hls.autoLevelEnabled) {
+                    //     span.innerHTML = "Auto (" + hls.levels[data.level].height + "p)";
+                    // } else {
+                    //     span.innerHTML = "Auto";
+                    // }
+                    // var x = document.querySelectorAll(".plyr__menu__container [data-plyr='settings'] span")[3];
+                    // if (x.innerHTML.startsWith("Auto") || x.innerHTML === "0p") {
+                    //     x.innerHTML = span.innerHTML;
+                    // }
+                })
+
+                hls.attachMedia(video);
+
+                function updateQuality(newQuality) {
+                    if (newQuality === 0) {
+                        hls.currentLevel = -1;
+                    } else {
+                        hls.levels.forEach((level, levelIndex) => {
+                            if (level.height === newQuality) {
+                                hls.currentLevel = levelIndex;
+                            }
+                        });
+                    }
+                }
+            });
+
+            app.ports.playPause.subscribe(function() {
+                const video = document.getElementById('video');
+                if (video.paused) {
+                    video.play();
+                } else {
+                    video.pause();
+                }
+            });
+
+            app.ports.seek.subscribe(function(arg) {
+                const video = document.getElementById('video');
+                video.currentTime = arg;
+            });
+        </script>
+    </body>
+</html>
