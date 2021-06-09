@@ -10,6 +10,7 @@ import Element.Input as Input
 import Html
 import Html.Attributes
 import Html.Events
+import Icons
 import Json.Decode as Decode
 
 
@@ -179,7 +180,7 @@ video model =
                 , Element.row
                     [ Element.spacing 10 ]
                     [ playPauseButton model.playing
-                    , Element.text (formatTime model.position ++ " / " ++ formatTime model.duration)
+                    , Element.el [ Element.moveDown 2.5 ] (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
                     ]
                 ]
     in
@@ -192,13 +193,13 @@ playPauseButton playing =
     let
         icon =
             if playing then
-                "⏸"
+                Icons.pause True
 
             else
-                "▶"
+                Icons.play True
     in
     Input.button []
-        { label = Element.text icon
+        { label = icon
         , onPress = Just PlayPause
         }
 
