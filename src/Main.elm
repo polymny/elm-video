@@ -137,7 +137,7 @@ video model =
                 [ Element.width Element.fill
                 , Element.padding 10
                 , Element.alignBottom
-                , Font.color (Element.rgb 1 1 1)
+                , Font.color (Element.rgba 1 1 1 0.85)
                 , Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
                 ]
                 [ Element.row
@@ -146,7 +146,7 @@ video model =
                     , Border.rounded 5
                     , Element.behindContent
                         (Element.el
-                            [ Background.color (Element.rgba 0.4 0.4 0.4 0.75)
+                            [ Background.color (Element.rgba 1 1 1 0.25)
                             , Element.width Element.fill
                             , Element.height (Element.px 5)
                             , Element.centerY
