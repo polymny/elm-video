@@ -98,7 +98,32 @@ video model =
             round (model.position * 1000)
 
         loaded =
-            0
+            List.filter (\( start, end ) -> start < model.position) model.loaded
+                |> List.map (\( start, end ) -> ( max model.position start, end ))
+
+        loadedToShow =
+            every model.duration loaded |> Debug.log "loaded"
+
+        showRange : ( Float, Float, Bool ) -> Element msg
+        showRange ( start, end, isLoaded ) =
+            let
+                portion =
+                    round (1000 * (end - start))
+            in
+            Element.el
+                [ Element.width (Element.fillPortion portion)
+                , Element.height Element.fill
+                , if isLoaded then
+                    Background.color (Element.rgba 1 1 1 0.5)
+
+                  else
+                    Background.color (Element.rgba 1 1 1 0)
+                ]
+                Element.none
+
+        loadedElement =
+            Element.row [ Element.width Element.fill, Element.height (Element.px 5), Element.centerY, Border.rounded 5 ]
+                (List.map showRange loadedToShow)
 
         remaining =
             round ((model.duration - model.position) * 1000)
@@ -125,6 +150,7 @@ video model =
                                 ]
                                 Element.none
                             )
+                        :: Element.behindContent loadedElement
                         :: seekBarEvents
                     )
                     [ Element.el
@@ -132,14 +158,6 @@ video model =
                         , Element.width (Element.fillPortion seen)
                         , Element.height Element.fill
                         , Border.roundEach { topLeft = 5, topRight = 0, bottomLeft = 5, bottomRight = 0 }
-                        , Element.height (Element.px 5)
-                        , Element.centerY
-                        ]
-                        Element.none
-                    , Element.el
-                        [ Background.color (Element.rgba 0.7 0.7 0.7 0.75)
-                        , Element.width (Element.fillPortion loaded)
-                        , Element.height Element.fill
                         , Element.height (Element.px 5)
                         , Element.centerY
                         ]
@@ -241,6 +259,24 @@ decodeTimeRange =
     Decode.map2 (\x y -> ( x, y ))
         (Decode.field "start" Decode.float)
         (Decode.field "end" Decode.float)
+
+
+every : Float -> List ( Float, Float ) -> List ( Float, Float, Bool )
+every duration input =
+    everyAux duration 0.0 [] input |> List.reverse |> List.filter (\( x, y, _ ) -> x /= y)
+
+
+everyAux : Float -> Float -> List ( Float, Float, Bool ) -> List ( Float, Float ) -> List ( Float, Float, Bool )
+everyAux duration currentTime currentState input =
+    case input of
+        [] ->
+            ( currentTime, duration, False ) :: currentState
+
+        [ ( start, end ) ] ->
+            ( end, duration, False ) :: ( start, end, True ) :: ( currentTime, start, False ) :: currentState
+
+        ( start, end ) :: t ->
+            everyAux duration end (( start, end, True ) :: ( currentTime, start, False ) :: currentState) t
 
 
 formatTime : Float -> String
