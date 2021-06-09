@@ -121,7 +121,12 @@ video model =
                 Element.none
 
         loadedElement =
-            Element.row [ Element.width Element.fill, Element.height (Element.px 5), Element.centerY, Border.rounded 5 ]
+            Element.row
+                [ Element.width Element.fill
+                , Element.height (Element.px 5)
+                , Element.centerY
+                , Border.rounded 5
+                ]
                 (List.map showRange loadedToShow)
 
         remaining =
@@ -136,22 +141,30 @@ video model =
                 , Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
                 ]
                 [ Element.row
-                    (Element.width Element.fill
-                        :: Element.height (Element.px 30)
-                        :: Border.rounded 5
-                        :: Element.behindContent
-                            (Element.el
-                                [ Background.color (Element.rgba 0.4 0.4 0.4 0.75)
-                                , Element.width Element.fill
-                                , Element.height (Element.px 5)
-                                , Element.centerY
-                                , Border.rounded 5
-                                ]
-                                Element.none
+                    [ Element.width Element.fill
+                    , Element.height (Element.px 30)
+                    , Border.rounded 5
+                    , Element.behindContent
+                        (Element.el
+                            [ Background.color (Element.rgba 0.4 0.4 0.4 0.75)
+                            , Element.width Element.fill
+                            , Element.height (Element.px 5)
+                            , Element.centerY
+                            , Border.rounded 5
+                            ]
+                            Element.none
+                        )
+                    , Element.behindContent loadedElement
+                    , Element.inFront
+                        (Element.el
+                            (Element.width Element.fill
+                                :: Element.height Element.fill
+                                :: Element.pointer
+                                :: seekBarEvents
                             )
-                        :: Element.behindContent loadedElement
-                        :: seekBarEvents
-                    )
+                            Element.none
+                        )
+                    ]
                     [ Element.el
                         [ Background.color (Element.rgba 1 0 0 0.75)
                         , Element.width (Element.fillPortion seen)
@@ -233,7 +246,7 @@ decodeVolumeChange =
 
 decodeSeek : Decode.Decoder Msg
 decodeSeek =
-    Decode.map2 (\x y -> Seek (toFloat x / 980))
+    Decode.map2 (\x y -> Seek (toFloat x / toFloat y))
         (Decode.field "layerX" Decode.int)
         (Dom.target <| Decode.field "offsetWidth" Decode.int)
 
