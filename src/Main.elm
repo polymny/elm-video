@@ -99,10 +99,9 @@ video model =
 
         loaded =
             List.filter (\( start, end ) -> start < model.position) model.loaded
-                |> List.map (\( start, end ) -> ( max model.position start, end ))
 
         loadedToShow =
-            every model.duration loaded |> Debug.log "loaded"
+            every model.duration loaded
 
         showRange : ( Float, Float, Bool ) -> Element msg
         showRange ( start, end, isLoaded ) =
@@ -234,7 +233,7 @@ decodeVolumeChange =
 
 decodeSeek : Decode.Decoder Msg
 decodeSeek =
-    Decode.map2 (\x y -> Seek (toFloat x / toFloat y))
+    Decode.map2 (\x y -> Seek (toFloat x / 980))
         (Decode.field "layerX" Decode.int)
         (Dom.target <| Decode.field "offsetWidth" Decode.int)
 
