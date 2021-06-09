@@ -31,14 +31,15 @@
                 }
             });
 
-            var app = Elm.Main.init({
+            const app = Elm.Main.init({
                 node: document.getElementById('container'),
+                flags: "video/manifest.m3u8",
             });
 
-            app.ports.initVideo.subscribe(function() {
+            app.ports.initVideo.subscribe(function(arg) {
                 const video = document.getElementById('video');
                 const hls = new Hls();
-                hls.loadSource('video/manifest.m3u8');
+                hls.loadSource(arg);
 
                 hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
                     // Transform available levels into an array of integers (height values).

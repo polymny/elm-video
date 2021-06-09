@@ -14,10 +14,10 @@ import Icons
 import Json.Decode as Decode
 
 
-main : Program Decode.Value Model Msg
+main : Program String Model Msg
 main =
     Browser.application
-        { init = \_ _ _ -> init
+        { init = \url _ _ -> init url
         , update = update
         , view = view
         , subscriptions = \_ -> nowHasQualities NowHasQualities
@@ -55,10 +55,10 @@ type Msg
     | NowHasQualities (List Int)
 
 
-init : ( Model, Cmd Msg )
-init =
+init : String -> ( Model, Cmd Msg )
+init url =
     ( Model
-        "video/manifest.m3u8"
+        url
         False
         0.0
         1.0
@@ -67,7 +67,7 @@ init =
         False
         False
         []
-    , initVideo ()
+    , initVideo url
     )
 
 
@@ -393,7 +393,7 @@ formatTime s =
     hoursString ++ minutesString ++ ":" ++ secsString
 
 
-port initVideo : () -> Cmd msg
+port initVideo : String -> Cmd msg
 
 
 port playPause : () -> Cmd msg
