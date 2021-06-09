@@ -20,7 +20,7 @@ main =
         { init = \_ _ _ -> init
         , update = update
         , view = view
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = \_ -> nowHasQualities NowHasQualities
         , onUrlChange = \_ -> Noop
         , onUrlRequest = \_ -> Noop
         }
@@ -35,6 +35,7 @@ type alias Model =
     , volume : Float
     , muted : Bool
     , isFullscreen : Bool
+    , qualities : List Int
     }
 
 
@@ -51,6 +52,7 @@ type Msg
     | NowAtVolume Float Bool
     | NowLoaded (List ( Float, Float ))
     | NowIsFullscreen Bool
+    | NowHasQualities (List Int)
 
 
 init : ( Model, Cmd Msg )
@@ -64,6 +66,7 @@ init =
         1.0
         False
         False
+        []
     , initVideo ()
     )
 
@@ -106,6 +109,9 @@ update msg model =
 
         NowIsFullscreen fullscreen ->
             ( { model | isFullscreen = fullscreen }, Cmd.none )
+
+        NowHasQualities qualities ->
+            ( { model | qualities = qualities }, Cmd.none )
 
 
 view : Model -> Browser.Document Msg
@@ -400,3 +406,6 @@ port requestFullscreen : () -> Cmd msg
 
 
 port exitFullscreen : () -> Cmd msg
+
+
+port nowHasQualities : (List Int -> msg) -> Sub msg

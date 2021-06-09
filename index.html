@@ -44,6 +44,7 @@
                     // Transform available levels into an array of integers (height values).
                     const availableQualities = hls.levels.map((l) => l.height);
                     availableQualities.unshift(0);
+                    app.ports.nowHasQualities.send(availableQualities);
                 });
 
                 hls.on(Hls.Events.LEVEL_SWITCHED, function (event, data) {
