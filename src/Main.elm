@@ -185,7 +185,7 @@ video model =
 
         bar =
             animatedEl
-                (if model.animationFrame < 5000 then
+                (if model.animationFrame < 3000 then
                     fadeIn
 
                  else
