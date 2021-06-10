@@ -138,7 +138,7 @@ update msg model =
 view : Model -> Browser.Document Msg
 view model =
     { title = "Hello"
-    , body = [ Element.layout [ Element.width Element.fill, Element.height Element.fill ] (video model) ]
+    , body = [ Element.layout [ Element.height Element.fill ] (video model) ]
     }
 
 
@@ -255,7 +255,7 @@ video model =
         )
         (Element.html
             (Html.video
-                videoEvents
+                (Html.Attributes.class "hf" :: videoEvents)
                 []
             )
         )
