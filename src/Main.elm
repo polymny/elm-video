@@ -138,7 +138,7 @@ update msg model =
 view : Model -> Browser.Document Msg
 view model =
     { title = "Hello"
-    , body = [ Element.layout [] (video model) ]
+    , body = [ Element.layout [ Element.width Element.fill, Element.height Element.fill ] (video model) ]
     }
 
 
@@ -245,8 +245,20 @@ video model =
                     ]
                 )
     in
-    Element.el (Element.inFront bar :: Element.width (Element.px 1000) :: Element.htmlAttribute (Html.Attributes.id "full") :: playerEvents)
-        (Element.html (Html.video videoEvents []))
+    Element.el
+        (Element.inFront bar
+            :: Element.width Element.fill
+            :: Element.height Element.fill
+            :: Background.color (Element.rgb 0 0 0)
+            :: Element.htmlAttribute (Html.Attributes.id "full")
+            :: playerEvents
+        )
+        (Element.html
+            (Html.video
+                videoEvents
+                []
+            )
+        )
 
 
 playPauseButton : Bool -> Element Msg
