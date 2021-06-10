@@ -1,6 +1,7 @@
 port module Main exposing (..)
 
 import Browser
+import Browser.Events
 import DOM as Dom
 import Element exposing (Element, alignRight, centerY, el, fill, padding, rgb255, row, spacing, text, width)
 import Element.Background as Background
@@ -12,6 +13,9 @@ import Html.Attributes
 import Html.Events
 import Icons
 import Json.Decode as Decode
+import Simple.Animation as Animation exposing (Animation)
+import Simple.Animation.Animated as Animated
+import Simple.Animation.Property as P
 
 
 main : Program String Model Msg
@@ -20,7 +24,12 @@ main =
         { init = \url _ _ -> init url
         , update = update
         , view = view
-        , subscriptions = \_ -> nowHasQualities NowHasQualities
+        , subscriptions =
+            \_ ->
+                Sub.batch
+                    [ nowHasQualities NowHasQualities
+                    , Browser.Events.onAnimationFrameDelta AnimationFrameDelta
+                    ]
         , onUrlChange = \_ -> Noop
         , onUrlRequest = \_ -> Noop
         }
@@ -36,6 +45,8 @@ type alias Model =
     , muted : Bool
     , isFullscreen : Bool
     , qualities : List Int
+    , showBar : Bool
+    , animationFrame : Float
     }
 
 
@@ -45,6 +56,8 @@ type Msg
     | Seek Float
     | RequestFullscreen
     | ExitFullscreen
+    | AnimationFrameDelta Float
+    | MouseMove
     | NowPlaying
     | NowPaused
     | NowHasDuration Float
@@ -67,6 +80,8 @@ init url =
         False
         False
         []
+        True
+        0
     , initVideo url
     )
 
@@ -88,6 +103,12 @@ update msg model =
 
         ExitFullscreen ->
             ( model, exitFullscreen () )
+
+        AnimationFrameDelta delta ->
+            ( { model | animationFrame = model.animationFrame + delta }, Cmd.none )
+
+        MouseMove ->
+            ( { model | animationFrame = 0 }, Cmd.none )
 
         NowPlaying ->
             ( { model | playing = True }, Cmd.none )
@@ -163,57 +184,66 @@ video model =
             round ((model.duration - model.position) * 1000)
 
         bar =
-            Element.column
-                [ Element.width Element.fill
-                , Element.padding 10
-                , Element.alignBottom
-                , Font.color (Element.rgba 1 1 1 0.85)
-                , Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
-                ]
-                [ Element.row
+            animatedEl
+                (if model.animationFrame < 5000 then
+                    fadeIn
+
+                 else
+                    fadeOut
+                )
+                [ Element.width Element.fill, Element.height Element.fill ]
+                (Element.column
                     [ Element.width Element.fill
-                    , Element.height (Element.px 30)
-                    , Border.rounded 5
-                    , Element.behindContent
-                        (Element.el
-                            [ Background.color (Element.rgba 1 1 1 0.25)
-                            , Element.width Element.fill
+                    , Element.padding 10
+                    , Element.alignBottom
+                    , Font.color (Element.rgba 1 1 1 0.85)
+                    , Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
+                    ]
+                    [ Element.row
+                        [ Element.width Element.fill
+                        , Element.height (Element.px 30)
+                        , Border.rounded 5
+                        , Element.behindContent
+                            (Element.el
+                                [ Background.color (Element.rgba 1 1 1 0.25)
+                                , Element.width Element.fill
+                                , Element.height (Element.px 5)
+                                , Element.centerY
+                                , Border.rounded 5
+                                ]
+                                Element.none
+                            )
+                        , Element.behindContent loadedElement
+                        , Element.inFront
+                            (Element.el
+                                (Element.width Element.fill
+                                    :: Element.height Element.fill
+                                    :: Element.pointer
+                                    :: seekBarEvents
+                                )
+                                Element.none
+                            )
+                        ]
+                        [ Element.el
+                            [ Background.color (Element.rgba 1 0 0 0.75)
+                            , Element.width (Element.fillPortion seen)
+                            , Element.height Element.fill
+                            , Border.roundEach { topLeft = 5, topRight = 0, bottomLeft = 5, bottomRight = 0 }
                             , Element.height (Element.px 5)
                             , Element.centerY
-                            , Border.rounded 5
                             ]
                             Element.none
-                        )
-                    , Element.behindContent loadedElement
-                    , Element.inFront
-                        (Element.el
-                            (Element.width Element.fill
-                                :: Element.height Element.fill
-                                :: Element.pointer
-                                :: seekBarEvents
-                            )
-                            Element.none
-                        )
-                    ]
-                    [ Element.el
-                        [ Background.color (Element.rgba 1 0 0 0.75)
-                        , Element.width (Element.fillPortion seen)
-                        , Element.height Element.fill
-                        , Border.roundEach { topLeft = 5, topRight = 0, bottomLeft = 5, bottomRight = 0 }
-                        , Element.height (Element.px 5)
-                        , Element.centerY
+                        , Element.el [ Element.width (Element.fillPortion remaining) ] Element.none
                         ]
-                        Element.none
-                    , Element.el [ Element.width (Element.fillPortion remaining) ] Element.none
+                    , Element.row
+                        [ Element.spacing 10, Element.width Element.fill ]
+                        [ playPauseButton model.playing
+                        , Element.el [ Element.moveDown 2.5 ] (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
+                        , Element.row [ Element.spacing 10, Element.alignRight ]
+                            [ fullscreenButton model.isFullscreen ]
+                        ]
                     ]
-                , Element.row
-                    [ Element.spacing 10, Element.width Element.fill ]
-                    [ playPauseButton model.playing
-                    , Element.el [ Element.moveDown 2.5 ] (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
-                    , Element.row [ Element.spacing 10, Element.alignRight ]
-                        [ fullscreenButton model.isFullscreen ]
-                    ]
-                ]
+                )
     in
     Element.el (Element.inFront bar :: Element.width (Element.px 1000) :: Element.htmlAttribute (Html.Attributes.id "full") :: playerEvents)
         (Element.html (Html.video videoEvents []))
@@ -254,6 +284,7 @@ playerEvents : List (Element.Attribute Msg)
 playerEvents =
     List.map Element.htmlAttribute
         [ Html.Events.on "fullscreenchange" decodeFullscreenChange
+        , Html.Events.on "mousemove" (Decode.succeed MouseMove)
         ]
 
 
@@ -409,3 +440,36 @@ port exitFullscreen : () -> Cmd msg
 
 
 port nowHasQualities : (List Int -> msg) -> Sub msg
+
+
+fadeIn : Animation
+fadeIn =
+    Animation.fromTo
+        { duration = 500
+        , options = []
+        }
+        [ P.opacity 0 ]
+        [ P.opacity 1 ]
+
+
+fadeOut : Animation
+fadeOut =
+    Animation.fromTo
+        { duration = 500
+        , options = []
+        }
+        [ P.opacity 1 ]
+        [ P.opacity 0 ]
+
+
+animatedEl : Animation -> List (Element.Attribute msg) -> Element msg -> Element msg
+animatedEl =
+    animatedUi Element.el
+
+
+animatedUi =
+    Animated.ui
+        { behindContent = Element.behindContent
+        , htmlAttribute = Element.htmlAttribute
+        , html = Element.html
+        }
