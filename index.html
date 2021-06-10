@@ -33,7 +33,11 @@
 
             const app = Elm.Main.init({
                 node: document.getElementById('container'),
-                flags: "video/manifest.m3u8",
+                flags: {
+                    url: "video/manifest.m3u8",
+                    width: window.innerWidth,
+                    height: window.innerHeight
+                }
             });
 
             app.ports.initVideo.subscribe(function(arg) {

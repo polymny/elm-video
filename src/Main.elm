@@ -18,7 +18,7 @@ import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
 
 
-main : Program String Model Msg
+main : Program Decode.Value Model Msg
 main =
     Browser.application
         { init = \url _ _ -> init url
@@ -29,6 +29,7 @@ main =
                 Sub.batch
                     [ nowHasQualities NowHasQualities
                     , Browser.Events.onAnimationFrameDelta AnimationFrameDelta
+                    , Browser.Events.onResize (\x y -> NowHasWindowSize ( x, y ))
                     ]
         , onUrlChange = \_ -> Noop
         , onUrlRequest = \_ -> Noop
@@ -47,6 +48,8 @@ type alias Model =
     , qualities : List Int
     , showBar : Bool
     , animationFrame : Float
+    , videoSize : ( Int, Int )
+    , screenSize : ( Int, Int )
     }
 
 
@@ -66,10 +69,25 @@ type Msg
     | NowLoaded (List ( Float, Float ))
     | NowIsFullscreen Bool
     | NowHasQualities (List Int)
+    | NowHasVideoSize ( Int, Int )
+    | NowHasWindowSize ( Int, Int )
 
 
-init : String -> ( Model, Cmd Msg )
-init url =
+init : Decode.Value -> ( Model, Cmd Msg )
+init flags =
+    let
+        url =
+            Decode.decodeValue (Decode.field "url" Decode.string) flags
+                |> Result.withDefault "manifest.m3u8"
+
+        width =
+            Decode.decodeValue (Decode.field "width" Decode.int) flags
+                |> Result.withDefault 0
+
+        height =
+            Decode.decodeValue (Decode.field "height" Decode.int) flags
+                |> Result.withDefault 0
+    in
     ( Model
         url
         False
@@ -82,6 +100,8 @@ init url =
         []
         True
         0
+        ( 0, 0 )
+        ( width, height )
     , initVideo url
     )
 
@@ -133,6 +153,12 @@ update msg model =
 
         NowHasQualities qualities ->
             ( { model | qualities = qualities }, Cmd.none )
+
+        NowHasVideoSize size ->
+            ( { model | videoSize = size }, Cmd.none )
+
+        NowHasWindowSize size ->
+            ( { model | screenSize = size }, Cmd.none )
 
 
 view : Model -> Browser.Document Msg
@@ -244,6 +270,31 @@ video model =
                         ]
                     ]
                 )
+
+        videoAspectRatio =
+            toFloat (Tuple.first model.videoSize) / toFloat (Tuple.second model.videoSize)
+
+        screenAspectRatio =
+            toFloat (Tuple.first model.screenSize) / toFloat (Tuple.second model.screenSize)
+
+        ( ( x, y ), ( w, h ) ) =
+            if videoAspectRatio > screenAspectRatio then
+                let
+                    videoHeight =
+                        Tuple.first model.screenSize * Tuple.second model.videoSize // Tuple.first model.videoSize
+                in
+                ( ( 0, (Tuple.second model.screenSize - videoHeight) // 2 )
+                , ( Tuple.first model.screenSize, videoHeight )
+                )
+
+            else
+                let
+                    videoWidth =
+                        Tuple.second model.screenSize * Tuple.first model.videoSize // Tuple.second model.videoSize
+                in
+                ( ( (Tuple.first model.screenSize - videoWidth) // 2, 0 )
+                , ( videoWidth, Tuple.second model.screenSize )
+                )
     in
     Element.el
         (Element.inFront bar
@@ -255,7 +306,13 @@ video model =
         )
         (Element.html
             (Html.video
-                (Html.Attributes.class "hf" :: videoEvents)
+                (Html.Attributes.style "position" "absolute"
+                    :: Html.Attributes.width w
+                    :: Html.Attributes.height h
+                    :: Html.Attributes.style "top" (String.fromInt y ++ "px")
+                    :: Html.Attributes.style "left" (String.fromInt x ++ "px")
+                    :: videoEvents
+                )
                 []
             )
         )
@@ -309,6 +366,7 @@ videoEvents =
     , Html.Events.on "timeupdate" decodePosition
     , Html.Events.on "volumechange" decodeVolumeChange
     , Html.Events.on "progress" decodeProgress
+    , Html.Events.on "resize" decodeVideoResize
     ]
 
 
@@ -377,6 +435,14 @@ decodeFullscreenChange =
         |> Decode.field "document"
         |> Dom.target
         |> Decode.map (\x -> NowIsFullscreen (x /= Nothing))
+
+
+decodeVideoResize : Decode.Decoder Msg
+decodeVideoResize =
+    Dom.target <|
+        Decode.map2 (\x y -> NowHasVideoSize ( x, y ))
+            (Decode.field "videoWidth" Decode.int)
+            (Decode.field "videoHeight" Decode.int)
 
 
 every : Float -> List ( Float, Float ) -> List ( Float, Float, Bool )
