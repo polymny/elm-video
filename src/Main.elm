@@ -3,7 +3,7 @@ port module Main exposing (..)
 import Browser
 import Browser.Events
 import DOM as Dom
-import Element exposing (Element, alignRight, centerY, el, fill, padding, rgb255, row, spacing, text, width)
+import Element exposing (Element)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
@@ -13,6 +13,7 @@ import Html.Attributes
 import Html.Events
 import Icons
 import Json.Decode as Decode
+import Quality
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
@@ -28,6 +29,15 @@ main =
             \_ ->
                 Sub.batch
                     [ nowHasQualities NowHasQualities
+                    , nowHasQuality
+                        (\x ->
+                            case Decode.decodeValue Quality.decode x of
+                                Ok s ->
+                                    NowHasQuality s
+
+                                _ ->
+                                    Noop
+                        )
                     , Browser.Events.onAnimationFrameDelta AnimationFrameDelta
                     , Browser.Events.onResize (\x y -> NowHasWindowSize ( x, y ))
                     ]
@@ -45,18 +55,32 @@ type alias Model =
     , volume : Float
     , muted : Bool
     , isFullscreen : Bool
+    , quality : Maybe Quality.Quality
     , qualities : List Int
     , showBar : Bool
     , animationFrame : Float
     , videoSize : ( Int, Int )
     , screenSize : ( Int, Int )
+    , playbackRate : Float
+    , settings : Settings
+    , showSettings : Bool
     }
+
+
+type Settings
+    = All
+    | Speed
+    | Quality
 
 
 type Msg
     = Noop
     | PlayPause
     | Seek Float
+    | ToggleSettings
+    | SetSettings Settings
+    | SetPlaybackRate Float
+    | SetQuality Quality.Quality
     | RequestFullscreen
     | ExitFullscreen
     | AnimationFrameDelta Float
@@ -69,8 +93,10 @@ type Msg
     | NowLoaded (List ( Float, Float ))
     | NowIsFullscreen Bool
     | NowHasQualities (List Int)
+    | NowHasQuality Quality.Quality
     | NowHasVideoSize ( Int, Int )
     | NowHasWindowSize ( Int, Int )
+    | NowHasPlaybackRate Float
 
 
 init : Decode.Value -> ( Model, Cmd Msg )
@@ -97,11 +123,15 @@ init flags =
         1.0
         False
         False
+        Nothing
         []
         True
         0
         ( 0, 0 )
         ( width, height )
+        1.0
+        All
+        False
     , initVideo url
     )
 
@@ -118,14 +148,30 @@ update msg model =
         Seek ratio ->
             ( model, seek (ratio * model.duration) )
 
+        SetPlaybackRate rate ->
+            ( { model | showSettings = False, settings = All }, setPlaybackRate rate )
+
+        ToggleSettings ->
+            ( { model | showSettings = not model.showSettings }, Cmd.none )
+
+        SetSettings s ->
+            ( { model | settings = s }, Cmd.none )
+
         RequestFullscreen ->
             ( model, requestFullscreen () )
 
         ExitFullscreen ->
             ( model, exitFullscreen () )
 
+        SetQuality q ->
+            ( { model | showSettings = False, settings = All }, setQuality q )
+
         AnimationFrameDelta delta ->
-            ( { model | animationFrame = model.animationFrame + delta }, Cmd.none )
+            if model.animationFrame + delta > 3500 then
+                ( { model | animationFrame = model.animationFrame + delta, showSettings = False, settings = All }, Cmd.none )
+
+            else
+                ( { model | animationFrame = model.animationFrame + delta }, Cmd.none )
 
         MouseMove ->
             ( { model | animationFrame = 0 }, Cmd.none )
@@ -154,11 +200,17 @@ update msg model =
         NowHasQualities qualities ->
             ( { model | qualities = qualities }, Cmd.none )
 
+        NowHasQuality quality ->
+            ( { model | quality = Just quality }, Cmd.none )
+
         NowHasVideoSize size ->
             ( { model | videoSize = size }, Cmd.none )
 
         NowHasWindowSize size ->
             ( { model | screenSize = size }, Cmd.none )
+
+        NowHasPlaybackRate rate ->
+            ( { model | playbackRate = rate }, Cmd.none )
 
 
 view : Model -> Browser.Document Msg
@@ -220,53 +272,58 @@ video model =
                 [ Element.width Element.fill, Element.height Element.fill ]
                 (Element.column
                     [ Element.width Element.fill
-                    , Element.padding 10
                     , Element.alignBottom
                     , Font.color (Element.rgba 1 1 1 0.85)
-                    , Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
                     ]
-                    [ Element.row
+                    [ settings model
+                    , Element.column
                         [ Element.width Element.fill
-                        , Element.height (Element.px 30)
-                        , Border.rounded 5
-                        , Element.behindContent
-                            (Element.el
-                                [ Background.color (Element.rgba 1 1 1 0.25)
-                                , Element.width Element.fill
+                        , Element.padding 10
+                        , Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
+                        ]
+                        [ Element.row
+                            [ Element.width Element.fill
+                            , Element.height (Element.px 30)
+                            , Border.rounded 5
+                            , Element.behindContent
+                                (Element.el
+                                    [ Background.color (Element.rgba 1 1 1 0.25)
+                                    , Element.width Element.fill
+                                    , Element.height (Element.px 5)
+                                    , Element.centerY
+                                    , Border.rounded 5
+                                    ]
+                                    Element.none
+                                )
+                            , Element.behindContent loadedElement
+                            , Element.inFront
+                                (Element.el
+                                    (Element.width Element.fill
+                                        :: Element.height Element.fill
+                                        :: Element.pointer
+                                        :: seekBarEvents
+                                    )
+                                    Element.none
+                                )
+                            ]
+                            [ Element.el
+                                [ Background.color (Element.rgba 1 0 0 0.75)
+                                , Element.width (Element.fillPortion seen)
+                                , Element.height Element.fill
+                                , Border.roundEach { topLeft = 5, topRight = 0, bottomLeft = 5, bottomRight = 0 }
                                 , Element.height (Element.px 5)
                                 , Element.centerY
-                                , Border.rounded 5
                                 ]
                                 Element.none
-                            )
-                        , Element.behindContent loadedElement
-                        , Element.inFront
-                            (Element.el
-                                (Element.width Element.fill
-                                    :: Element.height Element.fill
-                                    :: Element.pointer
-                                    :: seekBarEvents
-                                )
-                                Element.none
-                            )
-                        ]
-                        [ Element.el
-                            [ Background.color (Element.rgba 1 0 0 0.75)
-                            , Element.width (Element.fillPortion seen)
-                            , Element.height Element.fill
-                            , Border.roundEach { topLeft = 5, topRight = 0, bottomLeft = 5, bottomRight = 0 }
-                            , Element.height (Element.px 5)
-                            , Element.centerY
+                            , Element.el [ Element.width (Element.fillPortion remaining) ] Element.none
                             ]
-                            Element.none
-                        , Element.el [ Element.width (Element.fillPortion remaining) ] Element.none
-                        ]
-                    , Element.row
-                        [ Element.spacing 10, Element.width Element.fill ]
-                        [ playPauseButton model.playing
-                        , Element.el [ Element.moveDown 2.5 ] (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
-                        , Element.row [ Element.spacing 10, Element.alignRight ]
-                            [ fullscreenButton model.isFullscreen ]
+                        , Element.row
+                            [ Element.spacing 10, Element.width Element.fill ]
+                            [ playPauseButton model.playing
+                            , Element.el [ Element.moveDown 2.5 ] (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
+                            , Element.row [ Element.spacing 10, Element.alignRight ]
+                                [ settingsButton, fullscreenButton model.isFullscreen ]
+                            ]
                         ]
                     ]
                 )
@@ -318,6 +375,134 @@ video model =
         )
 
 
+settings : Model -> Element Msg
+settings model =
+    let
+        makeMenuButton : Settings -> Element Msg -> Element Msg -> Element Msg
+        makeMenuButton s key value =
+            Input.button [ Element.width Element.fill, Element.paddingXY 0 10 ]
+                { label =
+                    Element.row [ Element.width Element.fill, Element.spacing 20 ]
+                        [ Element.el [ Font.bold, Element.alignLeft ] key
+                        , Element.el [ Element.alignRight ] value
+                        ]
+                , onPress = Just (SetSettings s)
+                }
+
+        speedButton =
+            makeMenuButton Speed (Element.text "Speed") (Element.text ("x" ++ String.fromFloat model.playbackRate))
+
+        qualityButton =
+            case model.quality of
+                Just q ->
+                    makeMenuButton Quality (Element.text "Quality") (Element.text (Quality.toString q))
+
+                _ ->
+                    Element.none
+
+        returnButton =
+            Input.button
+                [ Element.width Element.fill
+                , Element.paddingXY 0 10
+                , Border.widthEach
+                    { bottom = 1
+                    , top = 0
+                    , left = 0
+                    , right = 0
+                    }
+                , Border.color (Element.rgba 0.5 0.5 0.5 0.75)
+                ]
+                { label = Element.text "Return"
+                , onPress = Just (SetSettings All)
+                }
+
+        speedOptions =
+            [ 0.5, 0.75, 1, 1.5, 2 ]
+                |> List.map
+                    (\x ->
+                        Input.button [ Element.width Element.fill, Element.paddingXY 0 10 ]
+                            { label =
+                                Element.row [ Element.width Element.fill ]
+                                    [ if x == model.playbackRate then
+                                        Icons.check False
+
+                                      else
+                                        Element.el [ Font.color (Element.rgba 0 0 0 0) ] (Icons.check False)
+                                    , Element.el
+                                        [ Element.paddingEach
+                                            { left = 10
+                                            , right = 0
+                                            , top = 0
+                                            , bottom = 0
+                                            }
+                                        ]
+                                        (Element.text ("x" ++ String.fromFloat x))
+                                    ]
+                            , onPress = Just (SetPlaybackRate x)
+                            }
+                    )
+                |> (\x -> returnButton :: x)
+
+        qualityOptions =
+            model.qualities
+                |> List.map
+                    (\x ->
+                        Input.button [ Element.width Element.fill, Element.paddingXY 0 10 ]
+                            { label =
+                                Element.row [ Element.width Element.fill ]
+                                    [ if Quality.isSameOption (Just { auto = False, height = x }) model.quality then
+                                        Icons.check False
+
+                                      else
+                                        Element.el [ Font.color (Element.rgba 0 0 0 0) ] (Icons.check False)
+                                    , Element.el
+                                        [ Element.paddingEach
+                                            { left = 10
+                                            , right = 0
+                                            , top = 0
+                                            , bottom = 0
+                                            }
+                                        ]
+                                        (Element.text (Quality.toString { auto = False, height = x }))
+                                    ]
+                            , onPress = Just (SetQuality { auto = x == 0, height = x })
+                            }
+                    )
+                |> (\x -> returnButton :: x)
+
+        buttons =
+            case model.settings of
+                All ->
+                    [ speedButton, qualityButton ]
+
+                Speed ->
+                    speedOptions
+
+                Quality ->
+                    qualityOptions
+    in
+    animatedEl
+        (if model.showSettings then
+            fadeIn
+
+         else
+            fadeOut
+        )
+        [ Element.padding 10
+        , Element.width Element.fill
+        , Element.height Element.fill
+        , Element.moveDown 20
+        ]
+        (Element.column
+            [ Background.color (Element.rgba 0.2 0.2 0.2 0.75)
+            , Element.alignRight
+            , Element.paddingXY 20 10
+            , Border.rounded 10
+            ]
+            buttons
+        )
+
+
 playPauseButton : Bool -> Element Msg
 playPauseButton playing =
     let
@@ -349,6 +534,14 @@ fullscreenButton isFullscreen =
         )
 
 
+settingsButton : Element Msg
+settingsButton =
+    Input.button []
+        { label = Icons.settings False
+        , onPress = Just ToggleSettings
+        }
+
+
 playerEvents : List (Element.Attribute Msg)
 playerEvents =
     List.map Element.htmlAttribute
@@ -367,6 +560,7 @@ videoEvents =
     , Html.Events.on "volumechange" decodeVolumeChange
     , Html.Events.on "progress" decodeProgress
     , Html.Events.on "resize" decodeVideoResize
+    , Html.Events.on "ratechange" decodePlaybackRateChange
     ]
 
 
@@ -422,7 +616,7 @@ decodeTimeRanges =
 
 decodeTimeRange : Decode.Decoder ( Float, Float )
 decodeTimeRange =
-    Decode.map2 (\x y -> ( x, y ))
+    Decode.map2 Tuple.pair
         (Decode.field "start" Decode.float)
         (Decode.field "end" Decode.float)
 
@@ -443,6 +637,13 @@ decodeVideoResize =
         Decode.map2 (\x y -> NowHasVideoSize ( x, y ))
             (Decode.field "videoWidth" Decode.int)
             (Decode.field "videoHeight" Decode.int)
+
+
+decodePlaybackRateChange : Decode.Decoder Msg
+decodePlaybackRateChange =
+    Dom.target <|
+        Decode.map NowHasPlaybackRate
+            (Decode.field "playbackRate" Decode.float)
 
 
 every : Float -> List ( Float, Float ) -> List ( Float, Float, Bool )
@@ -517,7 +718,16 @@ port requestFullscreen : () -> Cmd msg
 port exitFullscreen : () -> Cmd msg
 
 
+port setPlaybackRate : Float -> Cmd msg
+
+
+port setQuality : Quality.Quality -> Cmd msg
+
+
 port nowHasQualities : (List Int -> msg) -> Sub msg
+
+
+port nowHasQuality : (Decode.Value -> msg) -> Sub msg
 
 
 fadeIn : Animation

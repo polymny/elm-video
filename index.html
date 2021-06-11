@@ -40,10 +40,12 @@
                 }
             });
 
+            let hls;
+
             app.ports.initVideo.subscribe(function(arg) {
                 const video = document.getElementById('video');
                 if (Hls.isSupported()) {
-                    const hls = new Hls();
+                    hls = new Hls();
                     hls.loadSource(arg);
 
                     hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
@@ -54,16 +56,10 @@
                     });
 
                     hls.on(Hls.Events.LEVEL_SWITCHED, function (event, data) {
-                        // var span = document.querySelector(".plyr__menu__container [data-plyr='quality'][value='0'] span");
-                        // if (hls.autoLevelEnabled) {
-                        //     span.innerHTML = "Auto (" + hls.levels[data.level].height + "p)";
-                        // } else {
-                        //     span.innerHTML = "Auto";
-                        // }
-                        // var x = document.querySelectorAll(".plyr__menu__container [data-plyr='settings'] span")[3];
-                        // if (x.innerHTML.startsWith("Auto") || x.innerHTML === "0p") {
-                        //     x.innerHTML = span.innerHTML;
-                        // }
+                        app.ports.nowHasQuality.send({
+                            auto: hls.autoLevelEnabled,
+                            height: hls.levels[data.level].height
+                        });
                     })
 
                     hls.attachMedia(video);
@@ -92,6 +88,30 @@
 
             app.ports.exitFullscreen.subscribe(function() {
                 document.exitFullscreen();
+            });
+
+            app.ports.setPlaybackRate.subscribe(function(arg) {
+                const video = document.getElementById('video');
+                video.playbackRate = arg;
+            });
+
+            app.ports.setQuality.subscribe(function(arg) {
+                var old = hls.currentLevel;
+                if (arg.auto) {
+                    hls.currentLevel = -1;
+                } else {
+                    hls.levels.forEach((level, levelIndex) => {
+                        if (level.height === arg.height) {
+                            hls.currentLevel = levelIndex;
+                        }
+                    });
+                }
+                if (old === hls.currentLevel) {
+                    app.ports.nowHasQuality.send({
+                        auto: hls.autoLevelEnabled,
+                        height: hls.currentLevel === -1 ? 0 : hls.levels[hls.currentLevel].height
+                    });
+                }
             });
         </script>
     </body>
