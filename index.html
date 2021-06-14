@@ -42,7 +42,7 @@
 
             let hls;
 
-            app.ports.initVideo.subscribe(function(arg) {
+            app.ports.polymnyVideoInit.subscribe(function(arg) {
                 const video = document.getElementById('video');
                 if (Hls.isSupported()) {
                     hls = new Hls();
@@ -52,11 +52,11 @@
                         // Transform available levels into an array of integers (height values).
                         const availableQualities = hls.levels.map((l) => l.height);
                         availableQualities.unshift(0);
-                        app.ports.nowHasQualities.send(availableQualities);
+                        app.ports.polymnyVideoNowHasQualities.send(availableQualities);
                     });
 
                     hls.on(Hls.Events.LEVEL_SWITCHED, function (event, data) {
-                        app.ports.nowHasQuality.send({
+                        app.ports.polymnyVideoNowHasQuality.send({
                             auto: hls.autoLevelEnabled,
                             height: hls.levels[data.level].height
                         });
@@ -68,7 +68,7 @@
                 }
             });
 
-            app.ports.playPause.subscribe(function() {
+            app.ports.polymnyVideoPlayPause.subscribe(function() {
                 const video = document.getElementById('video');
                 if (video.paused) {
                     video.play();
@@ -77,26 +77,26 @@
                 }
             });
 
-            app.ports.seek.subscribe(function(arg) {
+            app.ports.polymnyVideoSeek.subscribe(function(arg) {
                 const video = document.getElementById('video');
                 console.log(arg);
                 video.currentTime = arg;
             });
 
-            app.ports.requestFullscreen.subscribe(function() {
+            app.ports.polymnyVideoRequestFullscreen.subscribe(function() {
                 document.getElementById('full').requestFullscreen();
             });
 
-            app.ports.exitFullscreen.subscribe(function() {
+            app.ports.polymnyVideoExitFullscreen.subscribe(function() {
                 document.exitFullscreen();
             });
 
-            app.ports.setPlaybackRate.subscribe(function(arg) {
+            app.ports.polymnyVideoSetPlaybackRate.subscribe(function(arg) {
                 const video = document.getElementById('video');
                 video.playbackRate = arg;
             });
 
-            app.ports.setQuality.subscribe(function(arg) {
+            app.ports.polymnyVideoSetQuality.subscribe(function(arg) {
                 var old = hls.currentLevel;
                 if (arg.auto) {
                     hls.currentLevel = -1;
@@ -108,14 +108,14 @@
                     });
                 }
                 if (old === hls.currentLevel) {
-                    app.ports.nowHasQuality.send({
+                    app.ports.polymnyVideoNowHasQuality.send({
                         auto: hls.autoLevelEnabled,
                         height: hls.currentLevel === -1 ? 0 : hls.levels[hls.currentLevel].height
                     });
                 }
             });
 
-            app.ports.setVolume.subscribe(function(arg) {
+            app.ports.polymnyVideoSetVolume.subscribe(function(arg) {
                 const video = document.getElementById('video');
                 video.volume = arg.volume;
                 video.muted = arg.muted;
