@@ -26,7 +26,7 @@ main =
         , update = update
         , view = view
         , subscriptions =
-            \_ ->
+            \model ->
                 Sub.batch
                     [ nowHasQualities NowHasQualities
                     , nowHasQuality
@@ -40,6 +40,7 @@ main =
                         )
                     , Browser.Events.onAnimationFrameDelta AnimationFrameDelta
                     , Browser.Events.onResize (\x y -> NowHasWindowSize ( x, y ))
+                    , Browser.Events.onKeyDown (decodeKeyDown model)
                     ]
         , onUrlChange = \_ -> Noop
         , onUrlRequest = \_ -> Noop
@@ -81,6 +82,7 @@ type Msg
     | SetSettings Settings
     | SetPlaybackRate Float
     | SetQuality Quality.Quality
+    | SetVolume Float Bool
     | RequestFullscreen
     | ExitFullscreen
     | AnimationFrameDelta Float
@@ -145,8 +147,8 @@ update msg model =
         PlayPause ->
             ( model, playPause () )
 
-        Seek ratio ->
-            ( model, seek (ratio * model.duration) )
+        Seek time ->
+            ( model, seek time )
 
         SetPlaybackRate rate ->
             ( { model | showSettings = False, settings = All }, setPlaybackRate rate )
@@ -165,6 +167,9 @@ update msg model =
 
         SetQuality q ->
             ( { model | showSettings = False, settings = All }, setQuality q )
+
+        SetVolume v m ->
+            ( model, setVolume { volume = v, muted = m } )
 
         AnimationFrameDelta delta ->
             if model.animationFrame + delta > 3500 then
@@ -301,7 +306,7 @@ video model =
                                     (Element.width Element.fill
                                         :: Element.height Element.fill
                                         :: Element.pointer
-                                        :: seekBarEvents
+                                        :: seekBarEvents model
                                     )
                                     Element.none
                                 )
@@ -320,6 +325,7 @@ video model =
                         , Element.row
                             [ Element.spacing 10, Element.width Element.fill ]
                             [ playPauseButton model.playing
+                            , volumeButton model.volume model.muted
                             , Element.el [ Element.moveDown 2.5 ] (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
                             , Element.row [ Element.spacing 10, Element.alignRight ]
                                 [ settingsButton, fullscreenButton model.isFullscreen ]
@@ -534,6 +540,28 @@ fullscreenButton isFullscreen =
         )
 
 
+volumeButton : Float -> Bool -> Element Msg
+volumeButton volume muted =
+    let
+        icon =
+            if muted then
+                Icons.volumeX
+
+            else if volume < 0.3 then
+                Icons.volume
+
+            else if volume < 0.6 then
+                Icons.volume1
+
+            else
+                Icons.volume2
+    in
+    Input.button []
+        { label = icon True
+        , onPress = Just (SetVolume volume (not muted))
+        }
+
+
 settingsButton : Element Msg
 settingsButton =
     Input.button []
@@ -564,10 +592,10 @@ videoEvents =
     ]
 
 
-seekBarEvents : List (Element.Attribute Msg)
-seekBarEvents =
+seekBarEvents : Model -> List (Element.Attribute Msg)
+seekBarEvents model =
     List.map Element.htmlAttribute
-        [ Html.Events.on "click" decodeSeek
+        [ Html.Events.on "click" (decodeSeek model)
         ]
 
 
@@ -593,9 +621,9 @@ decodeVolumeChange =
             (Decode.field "muted" Decode.bool)
 
 
-decodeSeek : Decode.Decoder Msg
-decodeSeek =
-    Decode.map2 (\x y -> Seek (toFloat x / toFloat y))
+decodeSeek : Model -> Decode.Decoder Msg
+decodeSeek model =
+    Decode.map2 (\x y -> Seek (toFloat x / toFloat y * model.duration))
         (Decode.field "layerX" Decode.int)
         (Dom.target <| Decode.field "offsetWidth" Decode.int)
 
@@ -644,6 +672,63 @@ decodePlaybackRateChange =
     Dom.target <|
         Decode.map NowHasPlaybackRate
             (Decode.field "playbackRate" Decode.float)
+
+
+decodeKeyDown : Model -> Decode.Decoder Msg
+decodeKeyDown model =
+    Decode.field "keyCode" Decode.int
+        |> Decode.andThen
+            (\x ->
+                case x of
+                    -- Enter key
+                    32 ->
+                        Decode.succeed PlayPause
+
+                    -- J key
+                    74 ->
+                        Decode.succeed (Seek (max 0 (model.position - 10)))
+
+                    -- L key
+                    76 ->
+                        Decode.succeed (Seek (min model.duration (model.position + 10)))
+
+                    -- K key
+                    75 ->
+                        Decode.succeed PlayPause
+
+                    -- Left arrow
+                    37 ->
+                        Decode.succeed (Seek (max 0 (model.position - 5)))
+
+                    -- Right arrow
+                    39 ->
+                        Decode.succeed (Seek (min model.duration (model.position + 5)))
+
+                    -- Down arrow
+                    40 ->
+                        Decode.succeed (SetVolume (max 0 (model.volume - 0.1)) model.muted)
+
+                    -- Top arrow
+                    38 ->
+                        Decode.succeed (SetVolume (min 1 (model.volume + 0.1)) model.muted)
+
+                    -- M key
+                    77 ->
+                        Decode.succeed (SetVolume model.volume (not model.muted))
+
+                    -- F key
+                    70 ->
+                        Decode.succeed
+                            (if model.isFullscreen then
+                                ExitFullscreen
+
+                             else
+                                RequestFullscreen
+                            )
+
+                    _ ->
+                        Decode.fail ("no shortcut for code " ++ String.fromInt x)
+            )
 
 
 every : Float -> List ( Float, Float ) -> List ( Float, Float, Bool )
@@ -722,6 +807,9 @@ port setPlaybackRate : Float -> Cmd msg
 
 
 port setQuality : Quality.Quality -> Cmd msg
+
+
+port setVolume : { volume : Float, muted : Bool } -> Cmd msg
 
 
 port nowHasQualities : (List Int -> msg) -> Sub msg

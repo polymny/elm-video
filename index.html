@@ -79,6 +79,7 @@
 
             app.ports.seek.subscribe(function(arg) {
                 const video = document.getElementById('video');
+                console.log(arg);
                 video.currentTime = arg;
             });
 
@@ -112,6 +113,12 @@
                         height: hls.currentLevel === -1 ? 0 : hls.levels[hls.currentLevel].height
                     });
                 }
+            });
+
+            app.ports.setVolume.subscribe(function(arg) {
+                const video = document.getElementById('video');
+                video.volume = arg.volume;
+                video.muted = arg.muted;
             });
         </script>
     </body>
