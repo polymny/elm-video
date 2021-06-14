@@ -1,4 +1,16 @@
-port module Video exposing (Msg(..), Settings(..), Video, fromUrl, init, nowHasQualities, nowHasQuality, update)
+port module Video exposing
+    ( Msg(..)
+    , Settings(..)
+    , SubtitleTrack
+    , Video
+    , fromUrl
+    , init
+    , nowHasQualities
+    , nowHasQuality
+    , nowHasSubtitleTrack
+    , nowHasSubtitles
+    , update
+    )
 
 import Json.Decode as Decode
 import Quality exposing (Quality)
@@ -21,6 +33,8 @@ type alias Video =
     , playbackRate : Float
     , settings : Settings
     , showSettings : Bool
+    , subtitles : List SubtitleTrack
+    , subtitleTrack : Maybe SubtitleTrack
     }
 
 
@@ -42,6 +56,8 @@ fromUrl url =
     , playbackRate = 1
     , settings = All
     , showSettings = False
+    , subtitles = []
+    , subtitleTrack = Nothing
     }
 
 
@@ -49,6 +65,17 @@ type Settings
     = All
     | Speed
     | Quality
+    | Subtitles
+
+
+type alias SubtitleTrack =
+    { name : String
+    , groupdId : String
+    , ty : String
+    , autoselect : Bool
+    , default : Bool
+    , forced : Bool
+    }
 
 
 type Msg
@@ -59,6 +86,7 @@ type Msg
     | SetSettings Settings
     | SetPlaybackRate Float
     | SetQuality Quality.Quality
+    | SetSubtitleTrack Int
     | SetVolume Float Bool
     | RequestFullscreen
     | ExitFullscreen
@@ -75,6 +103,8 @@ type Msg
     | NowHasQuality Quality.Quality
     | NowHasSize ( Int, Int )
     | NowHasPlaybackRate Float
+    | NowHasSubtitles (List SubtitleTrack)
+    | NowHasSubtitleTrack (Maybe SubtitleTrack)
 
 
 update : Msg -> Video -> ( Video, Cmd Msg )
@@ -106,6 +136,9 @@ update msg model =
 
         SetQuality q ->
             ( { model | showSettings = False, settings = All }, setQuality q )
+
+        SetSubtitleTrack t ->
+            ( { model | showSettings = False, settings = All }, setSubtitleTrack t )
 
         SetVolume v m ->
             ( model, setVolume { volume = v, muted = m } )
@@ -152,6 +185,12 @@ update msg model =
 
         NowHasPlaybackRate rate ->
             ( { model | playbackRate = rate }, Cmd.none )
+
+        NowHasSubtitles tracks ->
+            ( { model | subtitles = tracks }, Cmd.none )
+
+        NowHasSubtitleTrack track ->
+            ( { model | subtitleTrack = track }, Cmd.none )
 
 
 port polymnyVideoInit : String -> Cmd msg
@@ -210,6 +249,14 @@ setQuality =
     polymnyVideoSetQuality
 
 
+port polymnyVideoSetSubtitleTrack : Int -> Cmd msg
+
+
+setSubtitleTrack : Int -> Cmd msg
+setSubtitleTrack =
+    polymnyVideoSetSubtitleTrack
+
+
 port polymnyVideoSetVolume : { volume : Float, muted : Bool } -> Cmd msg
 
 
@@ -232,3 +279,19 @@ port polymnyVideoNowHasQuality : (Decode.Value -> msg) -> Sub msg
 nowHasQuality : (Decode.Value -> msg) -> Sub msg
 nowHasQuality =
     polymnyVideoNowHasQuality
+
+
+port polymnyVideoNowHasSubtitles : (Decode.Value -> msg) -> Sub msg
+
+
+nowHasSubtitles : (Decode.Value -> msg) -> Sub msg
+nowHasSubtitles =
+    polymnyVideoNowHasSubtitles
+
+
+port polymnyVideoNowHasSubtitleTrack : (Decode.Value -> msg) -> Sub msg
+
+
+nowHasSubtitleTrack : (Decode.Value -> msg) -> Sub msg
+nowHasSubtitleTrack =
+    polymnyVideoNowHasSubtitleTrack

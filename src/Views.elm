@@ -65,7 +65,7 @@ embed screenSize model =
                  else
                     fadeOut
                 )
-                [ Element.width Element.fill, Element.height Element.fill ]
+                [ Element.width Element.fill, Element.alignBottom ]
                 (Element.column
                     [ Element.width Element.fill
                     , Element.alignBottom
@@ -197,6 +197,17 @@ settings model =
                 _ ->
                     Element.none
 
+        subtitlesButton =
+            case ( model.subtitleTrack, model.subtitles ) of
+                ( Just t, _ :: _ ) ->
+                    makeMenuButton Video.Subtitles (Element.text "Subtitles") (Element.text t.name)
+
+                ( _, _ :: _ ) ->
+                    makeMenuButton Video.Subtitles (Element.text "Subtitles") (Element.text "Disabled")
+
+                _ ->
+                    Element.none
+
         returnButton =
             Input.button
                 [ Element.width Element.fill
@@ -267,16 +278,48 @@ settings model =
                     )
                 |> (\x -> returnButton :: x)
 
+        subtitleOptions =
+            model.subtitles
+                |> List.indexedMap (\i x -> ( i, Just x ))
+                |> (\x -> ( -1, Nothing ) :: x)
+                |> List.map
+                    (\( i, x ) ->
+                        Input.button [ Element.width Element.fill, Element.paddingXY 0 10 ]
+                            { label =
+                                Element.row [ Element.width Element.fill ]
+                                    [ if Maybe.map .name model.subtitleTrack == Maybe.map .name x then
+                                        Icons.check False
+
+                                      else
+                                        Element.el [ Font.color (Element.rgba 0 0 0 0) ] (Icons.check False)
+                                    , Element.el
+                                        [ Element.paddingEach
+                                            { left = 10
+                                            , right = 0
+                                            , top = 0
+                                            , bottom = 0
+                                            }
+                                        ]
+                                        (Element.text (Maybe.withDefault "Disabled" (Maybe.map .name x)))
+                                    ]
+                            , onPress = Just (Video.SetSubtitleTrack i)
+                            }
+                    )
+                |> (\x -> returnButton :: x)
+
         buttons =
             case model.settings of
                 Video.All ->
-                    [ speedButton, qualityButton ]
+                    [ speedButton, qualityButton, subtitlesButton ]
 
                 Video.Speed ->
                     speedOptions
 
                 Video.Quality ->
                     qualityOptions
+
+                Video.Subtitles ->
+                    subtitleOptions
     in
     animatedEl
         (if model.showSettings then

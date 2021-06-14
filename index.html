@@ -14,112 +14,14 @@
         <div id="container"></div>
         <script src="https://cdn.rawgit.com/video-dev/hls.js/18bb552/dist/hls.min.js"></script>
         <script src="js/main.js"></script>
+        <script src="js/ports.js"></script>
         <script>
-            Object.defineProperty(TimeRanges.prototype, "asArray", {
-                get: function() {
-                    var ret = [];
-                    for (var i = 0; i < this.length; i++) {
-                        ret.push({start: this.start(i), end: this.end(i)});
-                    }
-                    return ret;
-                }
+            embed({
+                node: document.getElementById("container"),
+                url: "video/manifest.m3u8",
             });
-
-            Object.defineProperty(HTMLElement.prototype, "document", {
-                get: function() {
-                    return document;
-                }
-            });
-
-            const app = Elm.Main.init({
-                node: document.getElementById('container'),
-                flags: {
-                    url: "video/manifest.m3u8",
-                    width: window.innerWidth,
-                    height: window.innerHeight
-                }
-            });
-
-            let hls;
-
-            app.ports.polymnyVideoInit.subscribe(function(arg) {
-                const video = document.getElementById('video');
-                if (Hls.isSupported()) {
-                    hls = new Hls();
-                    hls.loadSource(arg);
-
-                    hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
-                        // Transform available levels into an array of integers (height values).
-                        const availableQualities = hls.levels.map((l) => l.height);
-                        availableQualities.unshift(0);
-                        app.ports.polymnyVideoNowHasQualities.send(availableQualities);
-                    });
-
-                    hls.on(Hls.Events.LEVEL_SWITCHED, function (event, data) {
-                        app.ports.polymnyVideoNowHasQuality.send({
-                            auto: hls.autoLevelEnabled,
-                            height: hls.levels[data.level].height
-                        });
-                    })
-
-                    hls.attachMedia(video);
-                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                    video.src = arg;
-                }
-            });
-
-            app.ports.polymnyVideoPlayPause.subscribe(function() {
-                const video = document.getElementById('video');
-                if (video.paused) {
-                    video.play();
-                } else {
-                    video.pause();
-                }
-            });
-
-            app.ports.polymnyVideoSeek.subscribe(function(arg) {
-                const video = document.getElementById('video');
-                console.log(arg);
-                video.currentTime = arg;
-            });
-
-            app.ports.polymnyVideoRequestFullscreen.subscribe(function() {
-                document.getElementById('full').requestFullscreen();
-            });
-
-            app.ports.polymnyVideoExitFullscreen.subscribe(function() {
-                document.exitFullscreen();
-            });
-
-            app.ports.polymnyVideoSetPlaybackRate.subscribe(function(arg) {
-                const video = document.getElementById('video');
-                video.playbackRate = arg;
-            });
-
-            app.ports.polymnyVideoSetQuality.subscribe(function(arg) {
-                var old = hls.currentLevel;
-                if (arg.auto) {
-                    hls.currentLevel = -1;
-                } else {
-                    hls.levels.forEach((level, levelIndex) => {
-                        if (level.height === arg.height) {
-                            hls.currentLevel = levelIndex;
-                        }
-                    });
-                }
-                if (old === hls.currentLevel) {
-                    app.ports.polymnyVideoNowHasQuality.send({
-                        auto: hls.autoLevelEnabled,
-                        height: hls.currentLevel === -1 ? 0 : hls.levels[hls.currentLevel].height
-                    });
-                }
-            });
-
-            app.ports.polymnyVideoSetVolume.subscribe(function(arg) {
-                const video = document.getElementById('video');
-                video.volume = arg.volume;
-                video.muted = arg.muted;
-            });
+        </script>
+        <script>
         </script>
     </body>
 </html>

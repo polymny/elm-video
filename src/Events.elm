@@ -24,6 +24,24 @@ subs model =
                     _ ->
                         Video.Noop
             )
+        , Video.nowHasSubtitles
+            (\x ->
+                case Decode.decodeValue decodeSubtitles x of
+                    Ok s ->
+                        Video.NowHasSubtitles s
+
+                    _ ->
+                        Video.Noop
+            )
+        , Video.nowHasSubtitleTrack
+            (\x ->
+                case Decode.decodeValue decodeMaybeSubtitleTrack x of
+                    Ok t ->
+                        Video.NowHasSubtitleTrack t
+
+                    _ ->
+                        Video.Noop
+            )
         , Browser.Events.onAnimationFrameDelta Video.AnimationFrameDelta
         , Browser.Events.onKeyDown (decodeKeyDown model)
         ]
@@ -185,6 +203,67 @@ decodeKeyDown model =
                                 Video.RequestFullscreen
                             )
 
+                    -- 0 key
+                    48 ->
+                        Decode.succeed (Video.Seek 0)
+
+                    -- 1 key
+                    49 ->
+                        Decode.succeed (Video.Seek (0.1 * model.duration))
+
+                    -- 2 key
+                    50 ->
+                        Decode.succeed (Video.Seek (0.2 * model.duration))
+
+                    -- 3 key
+                    51 ->
+                        Decode.succeed (Video.Seek (0.3 * model.duration))
+
+                    -- 4 key
+                    52 ->
+                        Decode.succeed (Video.Seek (0.4 * model.duration))
+
+                    -- 5 key
+                    53 ->
+                        Decode.succeed (Video.Seek (0.5 * model.duration))
+
+                    -- 6 key
+                    54 ->
+                        Decode.succeed (Video.Seek (0.6 * model.duration))
+
+                    -- 7 key
+                    55 ->
+                        Decode.succeed (Video.Seek (0.7 * model.duration))
+
+                    -- 8 key
+                    56 ->
+                        Decode.succeed (Video.Seek (0.8 * model.duration))
+
+                    -- 9 key
+                    57 ->
+                        Decode.succeed (Video.Seek (0.9 * model.duration))
+
                     _ ->
                         Decode.fail ("no shortcut for code " ++ String.fromInt x)
             )
+
+
+decodeSubtitleTrack : Decode.Decoder Video.SubtitleTrack
+decodeSubtitleTrack =
+    Decode.map6 Video.SubtitleTrack
+        (Decode.field "name" Decode.string)
+        (Decode.field "groupId" Decode.string)
+        (Decode.field "type" Decode.string)
+        (Decode.field "autoselect" Decode.bool)
+        (Decode.field "default" Decode.bool)
+        (Decode.field "forced" Decode.bool)
+
+
+decodeMaybeSubtitleTrack : Decode.Decoder (Maybe Video.SubtitleTrack)
+decodeMaybeSubtitleTrack =
+    Decode.nullable decodeSubtitleTrack
+
+
+decodeSubtitles : Decode.Decoder (List Video.SubtitleTrack)
+decodeSubtitles =
+    Decode.list decodeSubtitleTrack
