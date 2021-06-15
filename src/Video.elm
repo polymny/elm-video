@@ -135,7 +135,16 @@ update msg model =
             )
 
         Seek time ->
-            ( model, seek time )
+            ( { model
+                | showIconRequested =
+                    if time > model.position then
+                        Just (Icons.fastForward True)
+
+                    else
+                        Just (Icons.rewind True)
+              }
+            , seek time
+            )
 
         SetPlaybackRate rate ->
             ( { model | showSettings = False, settings = All }, setPlaybackRate rate )
@@ -159,7 +168,19 @@ update msg model =
             ( { model | showSettings = False, settings = All }, setSubtitleTrack t )
 
         SetVolume v m ->
-            ( model, setVolume { volume = v, muted = m } )
+            ( { model
+                | showIconRequested =
+                    if m then
+                        Just (Icons.volumeX True)
+
+                    else if v >= model.volume then
+                        Just (Icons.volume2 True)
+
+                    else
+                        Just (Icons.volume1 True)
+              }
+            , setVolume { volume = v, muted = m }
+            )
 
         AnimationFrameDelta delta ->
             let

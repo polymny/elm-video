@@ -110,3 +110,19 @@ volumeX =
         , Svg.line [ x1 "23", y1 "9", x2 "17", y2 "15" ] []
         , Svg.line [ x1 "17", y1 "9", x2 "23", y2 "15" ] []
         ]
+
+
+rewind : Bool -> Element msg
+rewind =
+    svgFeatherIcon "rewind"
+        [ Svg.polygon [ points "11 19 2 12 11 5 11 19" ] []
+        , Svg.polygon [ points "22 19 13 12 22 5 22 19" ] []
+        ]
+
+
+fastForward : Bool -> Element msg
+fastForward =
+    svgFeatherIcon "fast-forward"
+        [ Svg.polygon [ points "13 19 22 12 13 5 13 19" ] []
+        , Svg.polygon [ points "2 19 11 12 2 5 2 19" ] []
+        ]
