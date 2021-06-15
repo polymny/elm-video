@@ -1,7 +1,6 @@
 module Events exposing (player, seekBar, subs, video)
 
 import Browser.Events
-import DOM as Dom
 import Element
 import Html
 import Html.Attributes
@@ -73,26 +72,29 @@ seekBar : Video -> List (Element.Attribute Video.Msg)
 seekBar model =
     List.map Element.htmlAttribute
         [ Html.Events.on "click" (decodeSeek model)
+        , Html.Events.on "mouseenter" decodeMouseEnter
+        , Html.Events.on "mouseleave" decodeMouseLeave
+        , Html.Events.on "mousemove" decodeMouseEnter
         ]
 
 
 decodeDurationChanged : Decode.Decoder Video.Msg
 decodeDurationChanged =
-    Dom.target <|
+    Decode.field "target" <|
         Decode.map Video.NowHasDuration
             (Decode.field "duration" Decode.float)
 
 
 decodePosition : Decode.Decoder Video.Msg
 decodePosition =
-    Dom.target <|
+    Decode.field "target" <|
         Decode.map Video.NowAtPosition
             (Decode.field "currentTime" Decode.float)
 
 
 decodeVolumeChange : Decode.Decoder Video.Msg
 decodeVolumeChange =
-    Dom.target <|
+    Decode.field "target" <|
         Decode.map2 Video.NowAtVolume
             (Decode.field "volume" Decode.float)
             (Decode.field "muted" Decode.bool)
@@ -102,15 +104,15 @@ decodeSeek : Video -> Decode.Decoder Video.Msg
 decodeSeek model =
     Decode.map2 (\x y -> Video.Seek (toFloat x / toFloat y * model.duration))
         (Decode.field "layerX" Decode.int)
-        (Dom.target <| Decode.field "offsetWidth" Decode.int)
+        (Decode.field "target" <| Decode.field "offsetWidth" Decode.int)
 
 
 decodeProgress : Decode.Decoder Video.Msg
 decodeProgress =
     decodeTimeRanges
-        |> Decode.field "asArray"
+        |> Decode.field "polymnyVideoAsArray"
         |> Decode.field "buffered"
-        |> Dom.target
+        |> Decode.field "target"
         |> Decode.map Video.NowLoaded
 
 
@@ -131,14 +133,14 @@ decodeFullscreenChange =
     Decode.value
         |> Decode.nullable
         |> Decode.field "fullscreenElement"
-        |> Decode.field "document"
-        |> Dom.target
+        |> Decode.field "polymnyVideoDocument"
+        |> Decode.field "target"
         |> Decode.map (\x -> Video.NowIsFullscreen (x /= Nothing))
 
 
 decodeVideoResize : Decode.Decoder Video.Msg
 decodeVideoResize =
-    Dom.target <|
+    Decode.field "target" <|
         Decode.map2 (\x y -> Video.NowHasSize ( x, y ))
             (Decode.field "videoWidth" Decode.int)
             (Decode.field "videoHeight" Decode.int)
@@ -146,9 +148,21 @@ decodeVideoResize =
 
 decodePlaybackRateChange : Decode.Decoder Video.Msg
 decodePlaybackRateChange =
-    Dom.target <|
+    Decode.field "target" <|
         Decode.map Video.NowHasPlaybackRate
             (Decode.field "playbackRate" Decode.float)
+
+
+decodeMouseEnter : Decode.Decoder Video.Msg
+decodeMouseEnter =
+    Decode.map2 (\x y -> Video.NowHasMiniature (Just ( x, y )))
+        (Decode.field "offsetX" Decode.int)
+        (Decode.field "target" <| Decode.field "offsetWidth" Decode.int)
+
+
+decodeMouseLeave : Decode.Decoder Video.Msg
+decodeMouseLeave =
+    Decode.succeed (Video.NowHasMiniature Nothing)
 
 
 decodeKeyDown : Video -> Decode.Decoder Video.Msg

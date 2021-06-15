@@ -2,7 +2,6 @@ module Main exposing (..)
 
 import Browser
 import Browser.Events
-import DOM as Dom
 import Element exposing (Element)
 import Element.Background as Background
 import Element.Border as Border

@@ -35,6 +35,7 @@ type alias Video =
     , showSettings : Bool
     , subtitles : List SubtitleTrack
     , subtitleTrack : Maybe SubtitleTrack
+    , showMiniature : Maybe ( Int, Int )
     }
 
 
@@ -58,6 +59,7 @@ fromUrl url =
     , showSettings = False
     , subtitles = []
     , subtitleTrack = Nothing
+    , showMiniature = Nothing
     }
 
 
@@ -105,6 +107,7 @@ type Msg
     | NowHasPlaybackRate Float
     | NowHasSubtitles (List SubtitleTrack)
     | NowHasSubtitleTrack (Maybe SubtitleTrack)
+    | NowHasMiniature (Maybe ( Int, Int ))
 
 
 update : Msg -> Video -> ( Video, Cmd Msg )
@@ -191,6 +194,9 @@ update msg model =
 
         NowHasSubtitleTrack track ->
             ( { model | subtitleTrack = track }, Cmd.none )
+
+        NowHasMiniature miniature ->
+            ( { model | showMiniature = miniature }, Cmd.none )
 
 
 port polymnyVideoInit : String -> Cmd msg

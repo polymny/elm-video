@@ -101,6 +101,60 @@ embed screenSize model =
                                     )
                                     Element.none
                                 )
+                            , Element.above
+                                (case model.showMiniature of
+                                    Just ( position, size ) ->
+                                        let
+                                            relativePosition =
+                                                toFloat position / toFloat size
+
+                                            percentage =
+                                                String.fromFloat (relativePosition * 100) ++ "%"
+
+                                            miniatureId =
+                                                round (relativePosition * 100)
+
+                                            miniatureIdString =
+                                                "miniature-" ++ String.padLeft 3 '0' (String.fromInt miniatureId) ++ ".png"
+
+                                            miniatureUrl =
+                                                model.url
+                                                    |> String.split "/"
+                                                    |> List.reverse
+                                                    |> List.drop 1
+                                                    |> (\list -> miniatureIdString :: list)
+                                                    |> List.reverse
+                                                    |> String.join "/"
+
+                                            rightPosition =
+                                                (position - 180 - 6)
+                                                    |> max 0
+                                                    |> min (size - 360 - 28)
+                                                    |> toFloat
+                                        in
+                                        Element.column
+                                            [ Element.moveRight rightPosition
+                                            , Element.spacing 10
+                                            ]
+                                            [ Element.image
+                                                [ Border.color (Element.rgb 1 1 1)
+                                                , Border.width 2
+                                                ]
+                                                { src = miniatureUrl, description = "miniature" }
+                                            , Element.el
+                                                [ Element.centerX
+                                                , Font.shadow
+                                                    { offset = ( 0, 0 )
+                                                    , blur = 4
+                                                    , color = Element.rgb 0 0 0
+                                                    }
+                                                ]
+                                                (Element.text (formatTime (relativePosition * model.duration)))
+                                            ]
+
+                                    _ ->
+                                        Element.none
+                                )
                             ]
                             [ Element.el
                                 [ Background.color (Element.rgba 1 0 0 0.75)
