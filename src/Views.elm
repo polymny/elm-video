@@ -57,6 +57,21 @@ embed screenSize model =
         remaining =
             round ((model.duration - model.position) * 1000)
 
+        overlay =
+            Element.el [ Element.centerX, Element.centerY, Font.color (Element.rgb 1 1 1) ]
+                (case model.showIcon of
+                    Just icon ->
+                        animatedEl fadeOutZoom
+                            [ Background.color (Element.rgb 0 0 0)
+                            , Border.rounded 100
+                            , Element.padding 10
+                            ]
+                            icon
+
+                    _ ->
+                        Element.none
+                )
+
         bar =
             animatedEl
                 (if model.animationFrame < 3000 then
@@ -205,7 +220,8 @@ embed screenSize model =
                 )
     in
     Element.el
-        (Element.inFront bar
+        (Element.inFront overlay
+            :: Element.inFront bar
             :: Element.width Element.fill
             :: Element.height Element.fill
             :: Background.color (Element.rgb 0 0 0)
@@ -533,6 +549,16 @@ fadeOut =
         }
         [ P.opacity 1 ]
         [ P.opacity 0 ]
+
+
+fadeOutZoom : Animation
+fadeOutZoom =
+    Animation.fromTo
+        { duration = 500
+        , options = []
+        }
+        [ P.opacity 1, P.scale 1 ]
+        [ P.opacity 0, P.scale 5 ]
 
 
 animatedEl : Animation -> List (Element.Attribute msg) -> Element msg -> Element msg

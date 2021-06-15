@@ -12,6 +12,8 @@ port module Video exposing
     , update
     )
 
+import Element exposing (Element)
+import Icons
 import Json.Decode as Decode
 import Quality exposing (Quality)
 
@@ -36,6 +38,8 @@ type alias Video =
     , subtitles : List SubtitleTrack
     , subtitleTrack : Maybe SubtitleTrack
     , showMiniature : Maybe ( Int, Int )
+    , showIcon : Maybe (Element Msg)
+    , showIconRequested : Maybe (Element Msg)
     }
 
 
@@ -60,6 +64,8 @@ fromUrl url =
     , subtitles = []
     , subtitleTrack = Nothing
     , showMiniature = Nothing
+    , showIcon = Nothing
+    , showIconRequested = Nothing
     }
 
 
@@ -117,7 +123,16 @@ update msg model =
             ( model, Cmd.none )
 
         PlayPause ->
-            ( model, playPause )
+            ( { model
+                | showIconRequested =
+                    if model.playing then
+                        Just (Icons.pause True)
+
+                    else
+                        Just (Icons.play True)
+              }
+            , playPause
+            )
 
         Seek time ->
             ( model, seek time )
@@ -147,11 +162,37 @@ update msg model =
             ( model, setVolume { volume = v, muted = m } )
 
         AnimationFrameDelta delta ->
-            if model.animationFrame + delta > 3500 then
-                ( { model | animationFrame = model.animationFrame + delta, showSettings = False, settings = All }, Cmd.none )
+            let
+                animationFrame =
+                    model.animationFrame + delta
 
-            else
-                ( { model | animationFrame = model.animationFrame + delta }, Cmd.none )
+                ( showSettings, settings ) =
+                    if animationFrame > 3500 then
+                        ( False, All )
+
+                    else
+                        ( model.showSettings, model.settings )
+
+                ( showIconRequested, showIcon ) =
+                    case ( model.showIconRequested, model.showIcon ) of
+                        ( Just a, Just b ) ->
+                            ( Just a, Nothing )
+
+                        ( Just a, Nothing ) ->
+                            ( Nothing, Just a )
+
+                        ( Nothing, a ) ->
+                            ( Nothing, a )
+            in
+            ( { model
+                | animationFrame = animationFrame
+                , showSettings = showSettings
+                , settings = settings
+                , showIconRequested = showIconRequested
+                , showIcon = showIcon
+              }
+            , Cmd.none
+            )
 
         MouseMove ->
             ( { model | animationFrame = 0 }, Cmd.none )
