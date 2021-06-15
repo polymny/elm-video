@@ -58,13 +58,32 @@ embed screenSize model =
             round ((model.duration - model.position) * 1000)
 
         overlay =
-            Element.el [ Element.centerX, Element.centerY, Font.color (Element.rgb 1 1 1) ]
-                (case model.showIcon of
-                    Just icon ->
+            Element.el
+                [ Element.width Element.fill
+                , Element.height Element.fill
+                , Font.color (Element.rgb 1 1 1)
+                , if not model.playing then
+                    Background.color (Element.rgba 0 0 0 0.5)
+
+                  else
+                    Background.color (Element.rgba 0 0 0 0)
+                ]
+                (case ( model.playing, model.showIcon ) of
+                    ( False, _ ) ->
+                        Element.el
+                            [ Element.centerX
+                            , Element.centerY
+                            , Element.scale 10
+                            ]
+                            (Icons.play True)
+
+                    ( _, Just icon ) ->
                         animatedEl fadeOutZoom
                             [ Background.color (Element.rgb 0 0 0)
                             , Border.rounded 100
                             , Element.padding 10
+                            , Element.centerX
+                            , Element.centerY
                             ]
                             icon
 

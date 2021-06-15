@@ -51,6 +51,7 @@ player =
     List.map Element.htmlAttribute
         [ Html.Events.on "fullscreenchange" decodeFullscreenChange
         , Html.Events.on "mousemove" (Decode.succeed Video.MouseMove)
+        , Html.Events.on "click" (Decode.succeed Video.PlayPause)
         ]
 
 
