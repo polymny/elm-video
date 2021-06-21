@@ -3,7 +3,7 @@ port module Video exposing
     , Settings(..)
     , SubtitleTrack
     , Video
-    , fromUrl
+    , fromConfig
     , init
     , nowHasQualities
     , nowHasQuality
@@ -44,10 +44,17 @@ type alias Video =
     }
 
 
-fromUrl : String -> String -> ( Video, Cmd Msg )
-fromUrl url id =
-    ( { url = url
-      , id = id
+type alias Config =
+    { url : String
+    , id : String
+    , autoplay : Bool
+    }
+
+
+fromConfig : Config -> ( Video, Cmd Msg )
+fromConfig config =
+    ( { url = config.url
+      , id = config.id
       , playing = False
       , position = 0
       , duration = 0
@@ -69,7 +76,7 @@ fromUrl url id =
       , showIcon = Nothing
       , showIconRequested = Nothing
       }
-    , init id url
+    , init config.id config.url config.autoplay
     )
 
 
@@ -265,12 +272,12 @@ update msg model =
             ( { model | showMiniature = miniature }, Cmd.none )
 
 
-port polymnyVideoInit : ( String, String ) -> Cmd msg
+port polymnyVideoInit : ( String, String, Bool ) -> Cmd msg
 
 
-init : String -> String -> Cmd msg
-init id url =
-    polymnyVideoInit ( id, url )
+init : String -> String -> Bool -> Cmd msg
+init id url autoplay =
+    polymnyVideoInit ( id, url, autoplay )
 
 
 port polymnyVideoPlayPause : String -> Cmd msg

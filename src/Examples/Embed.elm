@@ -64,7 +64,7 @@ init flags =
                 |> Result.withDefault 0
 
         ( video, cmd ) =
-            Video.fromUrl url "video"
+            Video.fromConfig { url = url, id = "video", autoplay = True }
     in
     ( { video = video, screenSize = ( width, height ) }
     , Cmd.map VideoMsg cmd
