@@ -260,8 +260,16 @@ overlay model =
             :: Font.color (Element.rgb 1 1 1)
             :: Events.overlay
         )
-        (case model.showIcon of
-            Just icon ->
+        (case ( not model.playing && not model.hasStarted, model.showIcon ) of
+            ( True, _ ) ->
+                Element.el
+                    [ Element.centerX
+                    , Element.centerY
+                    , Element.scale 10
+                    ]
+                    (Icons.play True)
+
+            ( _, Just icon ) ->
                 animatedEl fadeOutZoom
                     [ Background.color (Element.rgb 0 0 0)
                     , Border.rounded 100

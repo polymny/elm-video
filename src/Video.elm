@@ -19,7 +19,8 @@ import Video.Quality as Quality exposing (Quality)
 
 
 type alias Video =
-    { url : String
+    { hasStarted : Bool
+    , url : String
     , id : String
     , playing : Bool
     , position : Float
@@ -53,7 +54,8 @@ type alias Config =
 
 fromConfig : Config -> ( Video, Cmd Msg )
 fromConfig config =
-    ( { url = config.url
+    ( { hasStarted = False
+      , url = config.url
       , id = config.id
       , playing = False
       , position = 0
@@ -230,7 +232,7 @@ update msg model =
             ( { model | animationFrame = 0 }, Cmd.none )
 
         NowPlaying ->
-            ( { model | playing = True }, Cmd.none )
+            ( { model | playing = True, hasStarted = True }, Cmd.none )
 
         NowPaused ->
             ( { model | playing = False }, Cmd.none )
