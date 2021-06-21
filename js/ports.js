@@ -36,37 +36,39 @@ function setupApp(app) {
     let hls;
 
     app.ports.polymnyVideoInit.subscribe(function(arg) {
-        const video = document.getElementById(arg[0]);
-        if (Hls.isSupported()) {
-            hls = new Hls();
-            window.hls = hls;
-            hls.loadSource(arg[1]);
+        requestAnimationFrame(function() {
+            const video = document.getElementById(arg[0]);
+            if (Hls.isSupported()) {
+                hls = new Hls();
+                window.hls = hls;
+                hls.loadSource(arg[1]);
 
-            hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
-                const availableQualities = hls.levels.map((l) => l.height);
-                availableQualities.unshift(0);
-                app.ports.polymnyVideoNowHasQualities.send(availableQualities);
-            });
-
-            hls.on(Hls.Events.LEVEL_SWITCHED, function(event, data) {
-                app.ports.polymnyVideoNowHasQuality.send({
-                    auto: hls.autoLevelEnabled,
-                    height: hls.levels[data.level].height
+                hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
+                    const availableQualities = hls.levels.map((l) => l.height);
+                    availableQualities.unshift(0);
+                    app.ports.polymnyVideoNowHasQualities.send(availableQualities);
                 });
-            })
 
-            hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, function(event, data) {
-                app.ports.polymnyVideoNowHasSubtitles.send(data.subtitleTracks);
-            });
+                hls.on(Hls.Events.LEVEL_SWITCHED, function(event, data) {
+                    app.ports.polymnyVideoNowHasQuality.send({
+                        auto: hls.autoLevelEnabled,
+                        height: hls.levels[data.level].height
+                    });
+                })
 
-            hls.on(Hls.Events.SUBTITLE_TRACK_SWITCH, function(event, data) {
-                app.ports.polymnyVideoNowHasSubtitleTrack.send(data.id === -1 ? null : hls.subtitleTracks[data.id]);
-            });
+                hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, function(event, data) {
+                    app.ports.polymnyVideoNowHasSubtitles.send(data.subtitleTracks);
+                });
 
-            hls.attachMedia(video);
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = arg[1];
-        }
+                hls.on(Hls.Events.SUBTITLE_TRACK_SWITCH, function(event, data) {
+                    app.ports.polymnyVideoNowHasSubtitleTrack.send(data.id === -1 ? null : hls.subtitleTracks[data.id]);
+                });
+
+                hls.attachMedia(video);
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = arg[1];
+            }
+        });
     });
 
     app.ports.polymnyVideoPlayPause.subscribe(function(arg) {
