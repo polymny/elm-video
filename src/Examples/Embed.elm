@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Examples.Embed exposing (..)
 
 import Browser
 import Browser.Events
@@ -7,18 +7,16 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import Events
 import Html
 import Html.Attributes
 import Html.Events
-import Icons
 import Json.Decode as Decode
-import Quality
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
 import Video exposing (Video)
-import Views
+import Video.Events as Events
+import Video.Views as Views
 
 
 main : Program Decode.Value Model Msg
@@ -44,12 +42,6 @@ type alias Model =
     }
 
 
-type Settings
-    = All
-    | Speed
-    | Quality
-
-
 type Msg
     = Noop
     | VideoMsg Video.Msg
@@ -70,9 +62,12 @@ init flags =
         height =
             Decode.decodeValue (Decode.field "height" Decode.int) flags
                 |> Result.withDefault 0
+
+        ( video, cmd ) =
+            Video.fromUrl url "video"
     in
-    ( { video = Video.fromUrl url, screenSize = ( width, height ) }
-    , Video.init url
+    ( { video = video, screenSize = ( width, height ) }
+    , Cmd.map VideoMsg cmd
     )
 
 

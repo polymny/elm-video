@@ -13,13 +13,14 @@ port module Video exposing
     )
 
 import Element exposing (Element)
-import Icons
 import Json.Decode as Decode
-import Quality exposing (Quality)
+import Video.Icons as Icons
+import Video.Quality as Quality exposing (Quality)
 
 
 type alias Video =
     { url : String
+    , id : String
     , playing : Bool
     , position : Float
     , duration : Float
@@ -43,30 +44,33 @@ type alias Video =
     }
 
 
-fromUrl : String -> Video
-fromUrl url =
-    { url = url
-    , playing = False
-    , position = 0
-    , duration = 0
-    , loaded = []
-    , volume = 1
-    , muted = False
-    , isFullscreen = False
-    , quality = Nothing
-    , qualities = []
-    , showBar = True
-    , animationFrame = 0
-    , size = ( 0, 0 )
-    , playbackRate = 1
-    , settings = All
-    , showSettings = False
-    , subtitles = []
-    , subtitleTrack = Nothing
-    , showMiniature = Nothing
-    , showIcon = Nothing
-    , showIconRequested = Nothing
-    }
+fromUrl : String -> String -> ( Video, Cmd Msg )
+fromUrl url id =
+    ( { url = url
+      , id = id
+      , playing = False
+      , position = 0
+      , duration = 0
+      , loaded = []
+      , volume = 1
+      , muted = False
+      , isFullscreen = False
+      , quality = Nothing
+      , qualities = []
+      , showBar = True
+      , animationFrame = 0
+      , size = ( 0, 0 )
+      , playbackRate = 1
+      , settings = All
+      , showSettings = False
+      , subtitles = []
+      , subtitleTrack = Nothing
+      , showMiniature = Nothing
+      , showIcon = Nothing
+      , showIconRequested = Nothing
+      }
+    , init id url
+    )
 
 
 type Settings
@@ -131,7 +135,7 @@ update msg model =
                     else
                         Just (Icons.play True)
               }
-            , playPause
+            , playPause model.id
             )
 
         Seek time ->
@@ -143,11 +147,11 @@ update msg model =
                     else
                         Just (Icons.rewind True)
               }
-            , seek time
+            , seek model.id time
             )
 
         SetPlaybackRate rate ->
-            ( { model | showSettings = False, settings = All }, setPlaybackRate rate )
+            ( { model | showSettings = False, settings = All }, setPlaybackRate model.id rate )
 
         ToggleSettings ->
             ( { model | showSettings = not model.showSettings }, Cmd.none )
@@ -156,16 +160,16 @@ update msg model =
             ( { model | settings = s }, Cmd.none )
 
         RequestFullscreen ->
-            ( model, requestFullscreen )
+            ( model, requestFullscreen model.id )
 
         ExitFullscreen ->
-            ( model, exitFullscreen )
+            ( model, exitFullscreen model.id )
 
         SetQuality q ->
-            ( { model | showSettings = False, settings = All }, setQuality q )
+            ( { model | showSettings = False, settings = All }, setQuality model.id q )
 
         SetSubtitleTrack t ->
-            ( { model | showSettings = False, settings = All }, setSubtitleTrack t )
+            ( { model | showSettings = False, settings = All }, setSubtitleTrack model.id t )
 
         SetVolume v m ->
             ( { model
@@ -179,7 +183,7 @@ update msg model =
                     else
                         Just (Icons.volume1 True)
               }
-            , setVolume { volume = v, muted = m }
+            , setVolume model.id { volume = v, muted = m }
             )
 
         AnimationFrameDelta delta ->
@@ -261,76 +265,76 @@ update msg model =
             ( { model | showMiniature = miniature }, Cmd.none )
 
 
-port polymnyVideoInit : String -> Cmd msg
+port polymnyVideoInit : ( String, String ) -> Cmd msg
 
 
-init : String -> Cmd msg
-init =
-    polymnyVideoInit
+init : String -> String -> Cmd msg
+init id url =
+    polymnyVideoInit ( id, url )
 
 
-port polymnyVideoPlayPause : () -> Cmd msg
+port polymnyVideoPlayPause : String -> Cmd msg
 
 
-playPause : Cmd msg
+playPause : String -> Cmd msg
 playPause =
-    polymnyVideoPlayPause ()
+    polymnyVideoPlayPause
 
 
-port polymnyVideoSeek : Float -> Cmd msg
+port polymnyVideoSeek : ( String, Float ) -> Cmd msg
 
 
-seek : Float -> Cmd msg
-seek =
-    polymnyVideoSeek
+seek : String -> Float -> Cmd msg
+seek id s =
+    polymnyVideoSeek ( id, s )
 
 
-port polymnyVideoRequestFullscreen : () -> Cmd msg
+port polymnyVideoRequestFullscreen : String -> Cmd msg
 
 
-requestFullscreen : Cmd msg
+requestFullscreen : String -> Cmd msg
 requestFullscreen =
-    polymnyVideoRequestFullscreen ()
+    polymnyVideoRequestFullscreen
 
 
-port polymnyVideoExitFullscreen : () -> Cmd msg
+port polymnyVideoExitFullscreen : String -> Cmd msg
 
 
-exitFullscreen : Cmd msg
+exitFullscreen : String -> Cmd msg
 exitFullscreen =
-    polymnyVideoExitFullscreen ()
+    polymnyVideoExitFullscreen
 
 
-port polymnyVideoSetPlaybackRate : Float -> Cmd msg
+port polymnyVideoSetPlaybackRate : ( String, Float ) -> Cmd msg
 
 
-setPlaybackRate : Float -> Cmd msg
-setPlaybackRate =
-    polymnyVideoSetPlaybackRate
+setPlaybackRate : String -> Float -> Cmd msg
+setPlaybackRate id playbackRate =
+    polymnyVideoSetPlaybackRate ( id, playbackRate )
 
 
-port polymnyVideoSetQuality : Quality -> Cmd msg
+port polymnyVideoSetQuality : ( String, Quality ) -> Cmd msg
 
 
-setQuality : Quality -> Cmd msg
-setQuality =
-    polymnyVideoSetQuality
+setQuality : String -> Quality -> Cmd msg
+setQuality id quality =
+    polymnyVideoSetQuality ( id, quality )
 
 
-port polymnyVideoSetSubtitleTrack : Int -> Cmd msg
+port polymnyVideoSetSubtitleTrack : ( String, Int ) -> Cmd msg
 
 
-setSubtitleTrack : Int -> Cmd msg
-setSubtitleTrack =
-    polymnyVideoSetSubtitleTrack
+setSubtitleTrack : String -> Int -> Cmd msg
+setSubtitleTrack id track =
+    polymnyVideoSetSubtitleTrack ( id, track )
 
 
-port polymnyVideoSetVolume : { volume : Float, muted : Bool } -> Cmd msg
+port polymnyVideoSetVolume : ( String, { volume : Float, muted : Bool } ) -> Cmd msg
 
 
-setVolume : { volume : Float, muted : Bool } -> Cmd msg
-setVolume =
-    polymnyVideoSetVolume
+setVolume : String -> { volume : Float, muted : Bool } -> Cmd msg
+setVolume id volume =
+    polymnyVideoSetVolume ( id, volume )
 
 
 port polymnyVideoNowHasQualities : (List Int -> msg) -> Sub msg

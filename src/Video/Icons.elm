@@ -1,4 +1,4 @@
-module Icons exposing (..)
+module Video.Icons exposing (..)
 
 import Element exposing (Element)
 import Html exposing (Html)
@@ -10,12 +10,14 @@ svgFeatherIcon : String -> List (Svg msg) -> Bool -> Element msg
 svgFeatherIcon className lines f =
     Element.html
         (svg
-            [ if f then
-                class <| "filled feather feather-" ++ className
+            [ class <| "feather feather-" ++ className
+            , fill
+                (if f then
+                    "currentColor"
 
-              else
-                class <| "feather feather-" ++ className
-            , fill "none"
+                 else
+                    "none"
+                )
             , height "24"
             , stroke "currentColor"
             , strokeLinecap "round"

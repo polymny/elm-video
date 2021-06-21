@@ -1,218 +1,38 @@
-module Views exposing (..)
+module Video.Views exposing (..)
 
 import Element exposing (Element)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import Events as Events
 import Html
 import Html.Attributes
-import Icons
-import Quality
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
 import Video exposing (Video)
+import Video.Events as Events
+import Video.Icons as Icons
+import Video.Quality as Quality
+
+
+view : Video -> Element Video.Msg
+view model =
+    Element.el
+        (Element.inFront (overlay model)
+            :: Element.inFront (menu model)
+            :: Element.width Element.fill
+            :: Element.height Element.fill
+            :: Background.color (Element.rgb 0 0 0)
+            :: Element.htmlAttribute (Html.Attributes.id (model.id ++ "-full"))
+            :: Events.player
+        )
+        (Element.html (Html.video (Html.Attributes.class "wf" :: Events.video model) []))
 
 
 embed : ( Int, Int ) -> Video -> Element Video.Msg
 embed screenSize model =
     let
-        seen =
-            round (model.position * 1000)
-
-        loaded =
-            List.filter (\( start, end ) -> start < model.position) model.loaded
-
-        loadedToShow =
-            every model.duration loaded
-
-        showRange : ( Float, Float, Bool ) -> Element msg
-        showRange ( start, end, isLoaded ) =
-            let
-                portion =
-                    round (1000 * (end - start))
-            in
-            Element.el
-                [ Element.width (Element.fillPortion portion)
-                , Element.height Element.fill
-                , if isLoaded then
-                    Background.color (Element.rgba 1 1 1 0.5)
-
-                  else
-                    Background.color (Element.rgba 1 1 1 0)
-                ]
-                Element.none
-
-        loadedElement =
-            Element.row
-                [ Element.width Element.fill
-                , Element.height (Element.px 5)
-                , Element.centerY
-                , Border.rounded 5
-                ]
-                (List.map showRange loadedToShow)
-
-        remaining =
-            round ((model.duration - model.position) * 1000)
-
-        overlay =
-            Element.el
-                [ Element.width Element.fill
-                , Element.height Element.fill
-                , Font.color (Element.rgb 1 1 1)
-                , if not model.playing then
-                    Background.color (Element.rgba 0 0 0 0.5)
-
-                  else
-                    Background.color (Element.rgba 0 0 0 0)
-                ]
-                (case ( model.playing, model.showIcon ) of
-                    ( False, _ ) ->
-                        Element.el
-                            [ Element.centerX
-                            , Element.centerY
-                            , Element.scale 10
-                            ]
-                            (Icons.play True)
-
-                    ( _, Just icon ) ->
-                        animatedEl fadeOutZoom
-                            [ Background.color (Element.rgb 0 0 0)
-                            , Border.rounded 100
-                            , Element.padding 10
-                            , Element.centerX
-                            , Element.centerY
-                            ]
-                            icon
-
-                    _ ->
-                        Element.none
-                )
-
-        bar =
-            animatedEl
-                (if model.animationFrame < 3000 then
-                    fadeIn
-
-                 else
-                    fadeOut
-                )
-                [ Element.width Element.fill, Element.alignBottom ]
-                (Element.column
-                    [ Element.width Element.fill
-                    , Element.alignBottom
-                    , Font.color (Element.rgba 1 1 1 0.85)
-                    ]
-                    [ settings model
-                    , Element.column
-                        [ Element.width Element.fill
-                        , Element.padding 10
-                        , Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
-                        ]
-                        [ Element.row
-                            [ Element.width Element.fill
-                            , Element.height (Element.px 30)
-                            , Border.rounded 5
-                            , Element.behindContent
-                                (Element.el
-                                    [ Background.color (Element.rgba 1 1 1 0.25)
-                                    , Element.width Element.fill
-                                    , Element.height (Element.px 5)
-                                    , Element.centerY
-                                    , Border.rounded 5
-                                    ]
-                                    Element.none
-                                )
-                            , Element.behindContent loadedElement
-                            , Element.inFront
-                                (Element.el
-                                    (Element.width Element.fill
-                                        :: Element.height Element.fill
-                                        :: Element.pointer
-                                        :: Events.seekBar model
-                                    )
-                                    Element.none
-                                )
-                            , Element.above
-                                (case model.showMiniature of
-                                    Just ( position, size ) ->
-                                        let
-                                            relativePosition =
-                                                toFloat position / toFloat size
-
-                                            percentage =
-                                                String.fromFloat (relativePosition * 100) ++ "%"
-
-                                            miniatureId =
-                                                round (relativePosition * 100)
-
-                                            miniatureIdString =
-                                                "miniature-" ++ String.padLeft 3 '0' (String.fromInt miniatureId) ++ ".png"
-
-                                            miniatureUrl =
-                                                model.url
-                                                    |> String.split "/"
-                                                    |> List.reverse
-                                                    |> List.drop 1
-                                                    |> (\list -> miniatureIdString :: list)
-                                                    |> List.reverse
-                                                    |> String.join "/"
-
-                                            rightPosition =
-                                                (position - 180 - 6)
-                                                    |> max 0
-                                                    |> min (size - 360 - 28)
-                                                    |> toFloat
-                                        in
-                                        Element.column
-                                            [ Element.moveRight rightPosition
-                                            , Element.spacing 10
-                                            ]
-                                            [ Element.image
-                                                [ Border.color (Element.rgb 1 1 1)
-                                                , Border.width 2
-                                                ]
-                                                { src = miniatureUrl, description = "miniature" }
-                                            , Element.el
-                                                [ Element.centerX
-                                                , Font.shadow
-                                                    { offset = ( 0, 0 )
-                                                    , blur = 4
-                                                    , color = Element.rgb 0 0 0
-                                                    }
-                                                ]
-                                                (Element.text (formatTime (relativePosition * model.duration)))
-                                            ]
-
-                                    _ ->
-                                        Element.none
-                                )
-                            ]
-                            [ Element.el
-                                [ Background.color (Element.rgba 1 0 0 0.75)
-                                , Element.width (Element.fillPortion seen)
-                                , Element.height Element.fill
-                                , Border.roundEach { topLeft = 5, topRight = 0, bottomLeft = 5, bottomRight = 0 }
-                                , Element.height (Element.px 5)
-                                , Element.centerY
-                                ]
-                                Element.none
-                            , Element.el [ Element.width (Element.fillPortion remaining) ] Element.none
-                            ]
-                        , Element.row
-                            [ Element.spacing 10, Element.width Element.fill ]
-                            [ playPauseButton model.playing
-                            , volumeButton model.volume model.muted
-                            , Element.el [ Element.moveDown 2.5 ] (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
-                            , Element.row [ Element.spacing 10, Element.alignRight ]
-                                [ settingsButton, fullscreenButton model.isFullscreen ]
-                            ]
-                        ]
-                    ]
-                )
-
         videoAspectRatio =
             toFloat (Tuple.first model.size) / toFloat (Tuple.second model.size)
 
@@ -239,12 +59,12 @@ embed screenSize model =
                 )
     in
     Element.el
-        (Element.inFront overlay
-            :: Element.inFront bar
+        (Element.inFront (overlay model)
+            :: Element.inFront (menu model)
             :: Element.width Element.fill
             :: Element.height Element.fill
             :: Background.color (Element.rgb 0 0 0)
-            :: Element.htmlAttribute (Html.Attributes.id "full")
+            :: Element.htmlAttribute (Html.Attributes.id (model.id ++ "-full"))
             :: Events.player
         )
         (Element.html
@@ -254,7 +74,7 @@ embed screenSize model =
                     :: Html.Attributes.height h
                     :: Html.Attributes.style "top" (String.fromInt y ++ "px")
                     :: Html.Attributes.style "left" (String.fromInt x ++ "px")
-                    :: Events.video
+                    :: Events.video model
                 )
                 []
             )
@@ -430,6 +250,215 @@ settings model =
             ]
             buttons
         )
+
+
+overlay : Video -> Element Video.Msg
+overlay model =
+    Element.el
+        (Element.width Element.fill
+            :: Element.height Element.fill
+            :: Font.color (Element.rgb 1 1 1)
+            :: (if not model.playing then
+                    Background.color (Element.rgba 0 0 0 0.5)
+
+                else
+                    Background.color (Element.rgba 0 0 0 0)
+               )
+            :: Events.overlay
+        )
+        (case ( model.playing, model.showIcon ) of
+            ( False, _ ) ->
+                Element.el
+                    [ Element.centerX
+                    , Element.centerY
+                    , Element.scale 10
+                    ]
+                    (Icons.play True)
+
+            ( _, Just icon ) ->
+                animatedEl fadeOutZoom
+                    [ Background.color (Element.rgb 0 0 0)
+                    , Border.rounded 100
+                    , Element.padding 10
+                    , Element.centerX
+                    , Element.centerY
+                    ]
+                    icon
+
+            _ ->
+                Element.none
+        )
+
+
+menu : Video -> Element Video.Msg
+menu model =
+    animatedEl
+        (if model.animationFrame < 3000 then
+            fadeIn
+
+         else
+            fadeOut
+        )
+        [ Element.width Element.fill, Element.alignBottom ]
+        (Element.column
+            [ Element.width Element.fill
+            , Element.alignBottom
+            , Font.color (Element.rgba 1 1 1 0.85)
+            ]
+            [ settings model
+            , Element.column
+                [ Element.width Element.fill
+                , Element.padding 10
+                , Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
+                ]
+                [ seekbar model
+                , Element.row
+                    [ Element.spacing 10, Element.width Element.fill ]
+                    [ playPauseButton model.playing
+                    , volumeButton model.volume model.muted
+                    , Element.el [ Element.moveDown 2.5 ] (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
+                    , Element.row [ Element.spacing 10, Element.alignRight ]
+                        [ settingsButton, fullscreenButton model.isFullscreen ]
+                    ]
+                ]
+            ]
+        )
+
+
+seekbar : Video -> Element Video.Msg
+seekbar model =
+    let
+        seen =
+            round (model.position * 1000)
+
+        loaded =
+            List.filter (\( start, end ) -> start < model.position) model.loaded
+
+        loadedToShow =
+            every model.duration loaded
+
+        showRange : ( Float, Float, Bool ) -> Element msg
+        showRange ( start, end, isLoaded ) =
+            let
+                portion =
+                    round (1000 * (end - start))
+            in
+            Element.el
+                [ Element.width (Element.fillPortion portion)
+                , Element.height Element.fill
+                , if isLoaded then
+                    Background.color (Element.rgba 1 1 1 0.5)
+
+                  else
+                    Background.color (Element.rgba 1 1 1 0)
+                ]
+                Element.none
+
+        loadedElement =
+            Element.row
+                [ Element.width Element.fill
+                , Element.height (Element.px 5)
+                , Element.centerY
+                , Border.rounded 5
+                ]
+                (List.map showRange loadedToShow)
+
+        remaining =
+            round ((model.duration - model.position) * 1000)
+    in
+    Element.row
+        [ Element.width Element.fill
+        , Element.height (Element.px 30)
+        , Border.rounded 5
+        , Element.behindContent
+            (Element.el
+                [ Background.color (Element.rgba 1 1 1 0.25)
+                , Element.width Element.fill
+                , Element.height (Element.px 5)
+                , Element.centerY
+                , Border.rounded 5
+                ]
+                Element.none
+            )
+        , Element.behindContent loadedElement
+        , Element.inFront
+            (Element.el
+                (Element.width Element.fill
+                    :: Element.height Element.fill
+                    :: Element.pointer
+                    :: Events.seekBar model
+                )
+                Element.none
+            )
+        , Element.above (miniature model)
+        ]
+        [ Element.el
+            [ Background.color (Element.rgba 1 0 0 0.75)
+            , Element.width (Element.fillPortion seen)
+            , Element.height Element.fill
+            , Border.roundEach { topLeft = 5, topRight = 0, bottomLeft = 5, bottomRight = 0 }
+            , Element.height (Element.px 5)
+            , Element.centerY
+            ]
+            Element.none
+        , Element.el [ Element.width (Element.fillPortion remaining) ] Element.none
+        ]
+
+
+miniature : Video -> Element Video.Msg
+miniature model =
+    case model.showMiniature of
+        Just ( position, size ) ->
+            let
+                relativePosition =
+                    toFloat position / toFloat size
+
+                percentage =
+                    String.fromFloat (relativePosition * 100) ++ "%"
+
+                miniatureId =
+                    round (relativePosition * 100)
+
+                miniatureIdString =
+                    "miniature-" ++ String.padLeft 3 '0' (String.fromInt miniatureId) ++ ".png"
+
+                miniatureUrl =
+                    model.url
+                        |> String.split "/"
+                        |> List.reverse
+                        |> List.drop 1
+                        |> (\list -> miniatureIdString :: list)
+                        |> List.reverse
+                        |> String.join "/"
+
+                rightPosition =
+                    (position - 180 - 6)
+                        |> max 0
+                        |> min (size - 360 - 28)
+                        |> toFloat
+            in
+            Element.column
+                [ Element.moveRight rightPosition
+                , Element.spacing 10
+                ]
+                [ Element.image
+                    [ Border.color (Element.rgb 1 1 1)
+                    , Border.width 2
+                    ]
+                    { src = miniatureUrl, description = "miniature" }
+                , Element.el
+                    [ Element.centerX
+                    , Font.shadow
+                        { offset = ( 0, 0 )
+                        , blur = 4
+                        , color = Element.rgb 0 0 0
+                        }
+                    ]
+                    (Element.text (formatTime (relativePosition * model.duration)))
+                ]
+
+        _ ->
+            Element.none
 
 
 playPauseButton : Bool -> Element Video.Msg

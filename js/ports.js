@@ -27,16 +27,20 @@ function embed(options) {
     options.width = window.innerWidth;
     options.height = window.innerHeight;
 
-    const app = Elm.Main.init(options);
+    const app = Elm.Examples.Embed.init(options);
+    setupApp(app);
 
+}
+
+function setupApp(app) {
     let hls;
 
     app.ports.polymnyVideoInit.subscribe(function(arg) {
-        const video = document.getElementById('video');
+        const video = document.getElementById(arg[0]);
         if (Hls.isSupported()) {
             hls = new Hls();
             window.hls = hls;
-            hls.loadSource(arg);
+            hls.loadSource(arg[1]);
 
             hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
                 const availableQualities = hls.levels.map((l) => l.height);
@@ -61,12 +65,12 @@ function embed(options) {
 
             hls.attachMedia(video);
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = arg;
+            video.src = arg[1];
         }
     });
 
-    app.ports.polymnyVideoPlayPause.subscribe(function() {
-        const video = document.getElementById('video');
+    app.ports.polymnyVideoPlayPause.subscribe(function(arg) {
+        const video = document.getElementById(arg);
         if (video.paused) {
             video.play();
         } else {
@@ -75,30 +79,30 @@ function embed(options) {
     });
 
     app.ports.polymnyVideoSeek.subscribe(function(arg) {
-        const video = document.getElementById('video');
-        video.currentTime = arg;
+        const video = document.getElementById(arg[0]);
+        video.currentTime = arg[1];
     });
 
-    app.ports.polymnyVideoRequestFullscreen.subscribe(function() {
-        document.getElementById('full').requestFullscreen();
+    app.ports.polymnyVideoRequestFullscreen.subscribe(function(arg) {
+        document.getElementById(arg + '-full').requestFullscreen();
     });
 
-    app.ports.polymnyVideoExitFullscreen.subscribe(function() {
+    app.ports.polymnyVideoExitFullscreen.subscribe(function(arg) {
         document.exitFullscreen();
     });
 
     app.ports.polymnyVideoSetPlaybackRate.subscribe(function(arg) {
-        const video = document.getElementById('video');
-        video.playbackRate = arg;
+        const video = document.getElementById(arg[0]);
+        video.playbackRate = arg[1];
     });
 
     app.ports.polymnyVideoSetQuality.subscribe(function(arg) {
         var old = hls.currentLevel;
-        if (arg.auto) {
+        if (arg[1].auto) {
             hls.currentLevel = -1;
         } else {
             hls.levels.forEach((level, levelIndex) => {
-                if (level.height === arg.height) {
+                if (level.height === arg[1].height) {
                     hls.currentLevel = levelIndex;
                 }
             });
@@ -112,14 +116,14 @@ function embed(options) {
     });
 
     app.ports.polymnyVideoSetVolume.subscribe(function(arg) {
-        const video = document.getElementById('video');
-        video.volume = arg.volume;
-        video.muted = arg.muted;
+        const video = document.getElementById(arg[0]);
+        video.volume = arg[1].volume;
+        video.muted = arg[1].muted;
     });
 
     app.ports.polymnyVideoSetSubtitleTrack.subscribe(function(arg) {
-        hls.subtitleDisplay = arg !== -1;
-        hls.subtitleTrack = arg;
+        hls.subtitleDisplay = arg[1] !== -1;
+        hls.subtitleTrack = arg[1];
     });
 
 }

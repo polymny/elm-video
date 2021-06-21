@@ -1,4 +1,4 @@
-module Quality exposing (Quality, decode, isSameOption, toString)
+module Video.Quality exposing (Quality, decode, isSameOption, toString)
 
 import Json.Decode as Decode
 

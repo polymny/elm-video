@@ -1,4 +1,4 @@
-module Events exposing (player, seekBar, subs, video)
+module Video.Events exposing (overlay, player, seekBar, subs, video)
 
 import Browser.Events
 import Element
@@ -6,8 +6,8 @@ import Html
 import Html.Attributes
 import Html.Events
 import Json.Decode as Decode
-import Quality
 import Video exposing (Video)
+import Video.Quality as Quality
 
 
 subs : Video -> Sub Video.Msg
@@ -51,13 +51,12 @@ player =
     List.map Element.htmlAttribute
         [ Html.Events.on "fullscreenchange" decodeFullscreenChange
         , Html.Events.on "mousemove" (Decode.succeed Video.MouseMove)
-        , Html.Events.on "click" (Decode.succeed Video.PlayPause)
         ]
 
 
-video : List (Html.Attribute Video.Msg)
-video =
-    [ Html.Attributes.id "video"
+video : Video -> List (Html.Attribute Video.Msg)
+video model =
+    [ Html.Attributes.id model.id
     , Html.Events.on "playing" (Decode.succeed Video.NowPlaying)
     , Html.Events.on "pause" (Decode.succeed Video.NowPaused)
     , Html.Events.on "durationchange" decodeDurationChanged
@@ -66,6 +65,12 @@ video =
     , Html.Events.on "progress" decodeProgress
     , Html.Events.on "resize" decodeVideoResize
     , Html.Events.on "ratechange" decodePlaybackRateChange
+    ]
+
+
+overlay : List (Element.Attribute Video.Msg)
+overlay =
+    [ Element.htmlAttribute (Html.Events.on "click" (Decode.succeed Video.PlayPause))
     ]
 
 
