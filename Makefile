@@ -39,7 +39,6 @@ dist: js/main.min.js js/ports.js
 	@curl https://cdn.jsdelivr.net/npm/hls.js@latest > dist/polymny-video-full.min.js 2>/dev/null
 	@echo >> dist/polymny-video-full.min.js
 	@cat js/main.min.js >> dist/polymny-video-full.min.js
-	@echo >> dist/polymny-video-full.min.js
 	@uglifyjs js/ports.js >> dist/polymny-video-full.min.js
 	@# Elm version
 	@curl https://cdn.jsdelivr.net/npm/hls.js@latest > dist/polymny-video-elm.min.js 2>/dev/null

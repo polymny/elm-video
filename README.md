@@ -9,7 +9,7 @@ in the HLS format.
 ## Usage without elm
 
 Simply add the
-[polymny-video-full.js](https://github.com/polymny/elm-video/tree/master/dist/polymny-video-elm.js)
+[polymny-video-full.min.js](https://github.com/polymny/elm-video/tree/master/dist/polymny-video-elm.min.js)
 to your page and use the `PolymnyVideo.fullpage` or `PolymnyVideo.embed`
 functions.
 
@@ -34,7 +34,7 @@ Here is an example page ([see demo](https://polymny.github.io/elm-video/full-pag
         <script>
             PolymnyVideo.fullpage({
                 node: document.getElementById("container"),
-                url: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+                url: "video/manifest.m3u8",
                 autoplay: true
             });
         </script>
@@ -74,7 +74,7 @@ demo](https://polymny.github.io/elm-video/embed.html)):
         <script>
             PolymnyVideo.embed({
                 node: document.getElementById("node"),
-                url: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+                url: "video/manifest.m3u8",
                 autoplay: true
             });
         </script>
@@ -94,6 +94,6 @@ them [here](https://github.com/polymny/elm-video/blob/master/elm.json)), and
 add the `src` directory to the `source-directories` of your application.
 
 You also need to serve
-[polymny-video-elm.js](https://github.com/polymny/elm-video/tree/master/dist/polymny-video-elm.js)
+[polymny-video-elm.min.js](https://github.com/polymny/elm-video/tree/master/dist/polymny-video-elm.min.js)
 which contains the `PolymnyVideo.setup` functions which setups the ports on
 your app.
