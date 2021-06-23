@@ -20,9 +20,9 @@ view : Video -> Element Video.Msg
 view model =
     Element.el
         (Element.inFront (overlay model)
-            :: Element.inFront (menu model)
             :: Element.width Element.fill
             :: Element.height Element.fill
+            :: Element.inFront (menu model)
             :: Background.color (Element.rgb 0 0 0)
             :: Element.htmlAttribute (Html.Attributes.id (model.id ++ "-full"))
             :: Events.player
@@ -30,32 +30,50 @@ view model =
         (Element.html (Html.video (Html.Attributes.class "wf" :: Events.video model) []))
 
 
-embed : ( Int, Int ) -> Video -> Element Video.Msg
-embed screenSize model =
+embed : Video -> Element Video.Msg
+embed model =
+    if model.isFullscreen then
+        fullpage model
+
+    else
+        Element.el
+            (Element.inFront (overlay model)
+                :: Element.inFront (menu model)
+                :: Element.width Element.fill
+                :: Element.height Element.fill
+                :: Background.color (Element.rgb 0 0 0)
+                :: Element.htmlAttribute (Html.Attributes.id (model.id ++ "-full"))
+                :: Events.player
+            )
+            (Element.html (Html.video (Html.Attributes.class "wf" :: Events.video model) []))
+
+
+fullpage : Video -> Element Video.Msg
+fullpage model =
     let
         videoAspectRatio =
             toFloat (Tuple.first model.size) / toFloat (Tuple.second model.size)
 
         screenAspectRatio =
-            toFloat (Tuple.first screenSize) / toFloat (Tuple.second screenSize)
+            toFloat (Tuple.first model.screenSize) / toFloat (Tuple.second model.screenSize)
 
         ( ( x, y ), ( w, h ) ) =
             if videoAspectRatio > screenAspectRatio then
                 let
                     videoHeight =
-                        Tuple.first screenSize * Tuple.second model.size // Tuple.first model.size
+                        Tuple.first model.screenSize * Tuple.second model.size // Tuple.first model.size
                 in
-                ( ( 0, (Tuple.second screenSize - videoHeight) // 2 )
-                , ( Tuple.first screenSize, videoHeight )
+                ( ( 0, (Tuple.second model.screenSize - videoHeight) // 2 )
+                , ( Tuple.first model.screenSize, videoHeight )
                 )
 
             else
                 let
                     videoWidth =
-                        Tuple.second screenSize * Tuple.first model.size // Tuple.second model.size
+                        Tuple.second model.screenSize * Tuple.first model.size // Tuple.second model.size
                 in
-                ( ( (Tuple.first screenSize - videoWidth) // 2, 0 )
-                , ( videoWidth, Tuple.second screenSize )
+                ( ( (Tuple.first model.screenSize - videoWidth) // 2, 0 )
+                , ( videoWidth, Tuple.second model.screenSize )
                 )
     in
     Element.el

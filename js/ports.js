@@ -17,24 +17,37 @@ Object.defineProperty(HTMLElement.prototype, "polymnyVideoDocument", {
 const PolymnyVideo = (function() {
 
     const PolymnyVideo = {};
+    PolymnyVideo.idCounter = 0;
 
-    PolymnyVideo.embed = function(options) {
-        if (!(options.node instanceof HTMLElement)) {
-            throw new Error("options.node must be an HTMLElement");
+    function main(construct) {
+        return function(options) {
+            if (!(options.node instanceof HTMLElement)) {
+                throw new Error("options.node must be an HTMLElement");
+            }
+
+            if (typeof options.url !== "string" && ! (options.url instanceof String)) {
+                throw new Error("options.url must be a string");
+            }
+
+            options.flags = options;
+            options.id = "polmynyVideoId" + PolymnyVideo.idCoutner++;
+
+            const app = construct(options);
+            PolymnyVideo.setup(app);
+            return app;
+        };
+    }
+
+    if (Elm !== undefined) {
+        if (Elm.Main !== undefined) {
+            if (Elm.Main.Fullpage !== undefined) {
+                PolymnyVideo.fullpage = main(Elm.Main.Fullpage.init);
+            }
+            if (Elm.Main.Embed !== undefined) {
+                PolymnyVideo.embed = main(Elm.Main.Embed.init);
+            }
         }
-
-        if (typeof options.url !== "string" && ! (options.url instanceof String)) {
-            throw new Error("options.url must be a string");
-        }
-
-        options.flags = options;
-        options.width = window.innerWidth;
-        options.height = window.innerHeight;
-
-        const app = Elm.Examples.Embed.init(options);
-        PolymnyVideo.setup(app);
-
-    };
+    }
 
     PolymnyVideo.setup = function(app) {
         let hls;
@@ -107,7 +120,7 @@ const PolymnyVideo = (function() {
         });
 
         app.ports.polymnyVideoSetQuality.subscribe(function(arg) {
-            var old = hls.currentLevel;
+            const old = hls.currentLevel;
             if (arg[1].auto) {
                 hls.currentLevel = -1;
             } else {
@@ -136,6 +149,7 @@ const PolymnyVideo = (function() {
             hls.subtitleTrack = arg[1];
         });
 
+        app.ports.polymnyVideoNowHasScreenSize.send([window.innerWidth, window.innerHeight]);
     };
 
     return PolymnyVideo;
