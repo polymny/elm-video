@@ -18,7 +18,7 @@ functions.
 This version is made so that the video occupies all of the webpage, so it can
 be used within iframes for example.
 
-Here is an example page:
+Here is an example page ([see demo](https://polymny.github.io/elm-video/full-page.html)):
 
 ```html
 <!doctype HTML>
@@ -45,7 +45,8 @@ Here is an example page:
 ### Embed version
 
 This version is made so that you can include your video inside your page.
-Here is an example of such a webpage:
+Here is an example of such a webpage ([see
+demo](https://polymny.github.io/elm-video/embed.html)):
 
 ```html
 <!doctype HTML>
