@@ -1,0 +1,31 @@
+<!doctype HTML>
+<html>
+    <head>
+        <title>twitch.tforgione.fr</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            h1 {
+                width: 100%;
+                text-align: center;
+            }
+
+            #container {
+                margin-left: 20%;
+                width: 60%;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>An example of a centered video</h1>
+        <div id="container"><div id="node"></div></div>
+        <script src="dist/polymny-video-full.min.js"></script>
+        <script>
+            PolymnyVideo.embed({
+                node: document.getElementById("node"),
+                url: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+                autoplay: true
+            });
+        </script>
+    </body>
+</html>
