@@ -29,10 +29,13 @@ const PolymnyVideo = (function() {
                 throw new Error("options.url must be a string");
             }
 
-            options.flags = options;
-            options.id = "polmynyVideoId" + PolymnyVideo.idCoutner++;
+            options.id = "polmynyVideoId" + PolymnyVideo.idCounter++;
 
-            const app = construct(options);
+            const app = construct({
+                node: options.node,
+                flags: options
+            });
+
             PolymnyVideo.setup(app);
             return app;
         };
