@@ -1,7 +1,6 @@
 module Video.Icons exposing (..)
 
 import Element exposing (Element)
-import Html exposing (Html)
 import Svg exposing (Svg, svg)
 import Svg.Attributes exposing (..)
 

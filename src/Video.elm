@@ -213,7 +213,7 @@ update msg model =
 
                 ( showIconRequested, showIcon ) =
                     case ( model.showIconRequested, model.showIcon ) of
-                        ( Just a, Just b ) ->
+                        ( Just a, Just _ ) ->
                             ( Just a, Nothing )
 
                         ( Just a, Nothing ) ->

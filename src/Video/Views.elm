@@ -344,7 +344,7 @@ seekbar model =
             round (model.position * 1000)
 
         loaded =
-            List.filter (\( start, end ) -> start < model.position) model.loaded
+            List.filter (\( start, _ ) -> start < model.position) model.loaded
 
         loadedToShow =
             every model.duration loaded

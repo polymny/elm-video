@@ -1,19 +1,9 @@
 module Main.Fullpage exposing (..)
 
 import Browser
-import Browser.Events
-import Element exposing (Element)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Font as Font
-import Element.Input as Input
+import Element
 import Html
-import Html.Attributes
-import Html.Events
 import Json.Decode as Decode
-import Simple.Animation as Animation exposing (Animation)
-import Simple.Animation.Animated as Animated
-import Simple.Animation.Property as P
 import Video exposing (Video)
 import Video.Events as Events
 import Video.Views as Views
