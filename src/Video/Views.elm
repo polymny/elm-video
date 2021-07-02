@@ -273,10 +273,18 @@ settings model =
 overlay : Video -> Element Video.Msg
 overlay model =
     Element.el
-        (Element.width Element.fill
-            :: Element.height Element.fill
-            :: Font.color (Element.rgb 1 1 1)
-            :: Events.overlay
+        (if model.animationFrame < 3000 then
+            Element.width Element.fill
+                :: Element.height Element.fill
+                :: Font.color (Element.rgb 1 1 1)
+                :: Events.overlay
+
+         else
+            Element.width Element.fill
+                :: Element.height Element.fill
+                :: hideCursor
+                :: Font.color (Element.rgb 1 1 1)
+                :: Events.overlay
         )
         (case ( not model.playing && not model.hasStarted, model.showIcon ) of
             ( True, _ ) ->
@@ -424,9 +432,6 @@ miniature model =
             let
                 relativePosition =
                     toFloat position / toFloat size
-
-                percentage =
-                    String.fromFloat (relativePosition * 100) ++ "%"
 
                 miniatureId =
                     round (relativePosition * 100)
@@ -626,9 +631,20 @@ animatedEl =
     animatedUi Element.el
 
 
+animatedUi :
+    (List (Element.Attribute msg) -> children -> Element msg)
+    -> Animation
+    -> List (Element.Attribute msg)
+    -> children
+    -> Element msg
 animatedUi =
     Animated.ui
         { behindContent = Element.behindContent
         , htmlAttribute = Element.htmlAttribute
         , html = Element.html
         }
+
+
+hideCursor : Element.Attribute msg
+hideCursor =
+    Element.htmlAttribute (Html.Attributes.style "cursor" "none")
