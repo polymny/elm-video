@@ -41,12 +41,12 @@ const PolymnyVideo = (function() {
         };
     }
 
-    if (Elm !== undefined) {
-        if (Elm.Main !== undefined) {
-            if (Elm.Main.Fullpage !== undefined) {
+    if (typeof Elm !== "undefined") {
+        if (typeof Elm.Main !== "undefined") {
+            if (typeof Elm.Main.Fullpage !== "undefined") {
                 PolymnyVideo.fullpage = main(Elm.Main.Fullpage.init);
             }
-            if (Elm.Main.Embed !== undefined) {
+            if (typeof Elm.Main.Embed !== "undefined") {
                 PolymnyVideo.embed = main(Elm.Main.Embed.init);
             }
         }
