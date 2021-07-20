@@ -6,7 +6,7 @@ import Html
 import Json.Decode as Decode
 import Video exposing (Video)
 import Video.Events as Events
-import Video.MobileViews as Views
+import Video.Views as Views
 
 
 main : Program Decode.Value Video Video.Msg

@@ -312,6 +312,71 @@ overlay model =
 
 menu : Video -> Element Video.Msg
 menu model =
+    if model.mobile then
+        mobileMenu model
+
+    else
+        animatedEl
+            (if model.animationFrame < 3000 then
+                fadeIn
+
+             else
+                fadeOut
+            )
+            [ Element.width Element.fill, Element.alignBottom ]
+            (Element.column
+                [ Element.width Element.fill
+                , Element.alignBottom
+                , Font.color (Element.rgba 1 1 1 0.85)
+                ]
+                [ settings model
+                , Element.column
+                    [ Element.width Element.fill
+                    , Element.padding 10
+                    , Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
+                    ]
+                    [ seekbar model
+                    , Element.row
+                        [ Element.spacing 10, Element.width Element.fill ]
+                        [ playPauseButton model.playing
+                        , volumeButton model.volume model.muted
+                        , Element.el [ Element.moveDown 2.5 ] (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
+                        , Element.row [ Element.spacing 10, Element.alignRight ]
+                            [ settingsButton, fullscreenButton model.isFullscreen ]
+                        ]
+                    ]
+                ]
+            )
+
+
+mobileMenu : Video -> Element Video.Msg
+mobileMenu model =
+    let
+        rewind =
+            Input.button [ Element.centerX ]
+                { onPress = Just (Video.Seek (model.position - 10))
+                , label = Icons.rewind True
+                }
+
+        fastForward =
+            Input.button [ Element.centerX ]
+                { onPress = Just (Video.Seek (model.position + 10))
+                , label = Icons.fastForward True
+                }
+
+        playPause =
+            Input.button [ Element.centerX ]
+                { onPress = Just Video.PlayPause
+                , label =
+                    (if model.playing then
+                        Icons.pause
+
+                     else
+                        Icons.play
+                    )
+                        True
+                }
+    in
     animatedEl
         (if model.animationFrame < 3000 then
             fadeIn
@@ -319,27 +384,36 @@ menu model =
          else
             fadeOut
         )
-        [ Element.width Element.fill, Element.alignBottom ]
-        (Element.column
-            [ Element.width Element.fill
-            , Element.alignBottom
-            , Font.color (Element.rgba 1 1 1 0.85)
-            ]
-            [ settings model
-            , Element.column
-                [ Element.width Element.fill
+        [ Element.width Element.fill
+        , Element.height Element.fill
+        , Element.inFront
+            (Element.column
+                [ Element.alignBottom
+                , Element.width Element.fill
                 , Element.padding 10
                 , Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
+                , Font.color (Element.rgb 1 1 1)
                 ]
                 [ seekbar model
                 , Element.row
                     [ Element.spacing 10, Element.width Element.fill ]
-                    [ playPauseButton model.playing
-                    , volumeButton model.volume model.muted
-                    , Element.el [ Element.moveDown 2.5 ] (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
+                    [ Element.el [ Element.moveDown 2.5 ]
+                        (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
                     , Element.row [ Element.spacing 10, Element.alignRight ]
                         [ settingsButton, fullscreenButton model.isFullscreen ]
                     ]
+                ]
+            )
+        ]
+        (Element.column [ Element.height Element.fill, Element.width Element.fill ]
+            [ Element.row
+                [ Element.width Element.fill
+                , Element.centerY
+                , Font.color (Element.rgba 1 1 1 0.85)
+                ]
+                [ Element.el [ Element.width Element.fill ] rewind
+                , Element.el [ Element.width Element.fill ] playPause
+                , Element.el [ Element.width Element.fill ] fastForward
                 ]
             ]
         )
