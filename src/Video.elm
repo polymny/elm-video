@@ -44,6 +44,7 @@ type alias Video =
     , showMiniature : Maybe ( Int, Int )
     , showIcon : Maybe (Element Msg)
     , showIconRequested : Maybe (Element Msg)
+    , mobile : Bool
     }
 
 
@@ -51,6 +52,7 @@ type alias Config =
     { url : String
     , id : String
     , autoplay : Bool
+    , mobile : Bool
     }
 
 
@@ -80,6 +82,7 @@ fromConfig config =
       , showMiniature = Nothing
       , showIcon = Nothing
       , showIconRequested = Nothing
+      , mobile = config.mobile
       }
     , init config.id config.url config.autoplay
     )

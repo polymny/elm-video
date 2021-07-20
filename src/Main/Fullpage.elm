@@ -30,11 +30,15 @@ init flags =
             Decode.decodeValue (Decode.field "url" Decode.string) flags
                 |> Result.withDefault "manifest.m3u8"
 
+        mobile =
+            Decode.decodeValue (Decode.field "mobile" Decode.bool) flags
+                |> Result.withDefault False
+
         autoplay =
             Decode.decodeValue (Decode.field "autoplay" Decode.bool) flags
                 |> Result.withDefault False
     in
-    Video.fromConfig { url = url, id = id, autoplay = autoplay }
+    Video.fromConfig { url = url, id = id, autoplay = autoplay, mobile = mobile }
 
 
 view : Video -> Html.Html Video.Msg

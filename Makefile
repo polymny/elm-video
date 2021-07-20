@@ -27,9 +27,6 @@ js/main.min.js: js/main.tmp.js
 js/main.tmp.js: src/**
 	@$(ELM) make src/Main/*.elm --optimize --output $(BUILD_DIR)/main.tmp.js
 
-watch:
-	@$(ELMLIVE) src/Main/*.elm -p 7000 -d . -- --output $(BUILD_DIR)/main.js
-
 clean:
 	@rm -rf $(BUILD_DIR)/{main.js,main.min.js}
 
