@@ -291,7 +291,7 @@ overlay model =
                 Element.el
                     [ Element.centerX
                     , Element.centerY
-                    , Element.scale 10
+                    , Element.scale 5
                     ]
                     (Icons.play True)
 
@@ -501,8 +501,8 @@ seekbar model =
 
 miniature : Video -> Element Video.Msg
 miniature model =
-    case model.showMiniature of
-        Just ( position, size ) ->
+    case ( model.mobile, model.showMiniature ) of
+        ( False, Just ( position, size ) ) ->
             let
                 relativePosition =
                     toFloat position / toFloat size

@@ -37,7 +37,6 @@ const PolymnyVideo = (function() {
 
             options.id = "polmynyVideoId" + PolymnyVideo.idCounter++;
             options.mobile = isDeviceMobile();
-            console.log(options.mobile);
 
             const app = construct({
                 node: options.node,
