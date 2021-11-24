@@ -12,7 +12,7 @@ endif
 
 BUILD_DIR=js
 
-all: dev
+all: dist
 
 dev: js/main.js
 

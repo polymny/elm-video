@@ -7,6 +7,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Html
 import Html.Attributes
+import Material.Icons
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
@@ -21,7 +22,6 @@ view model =
     Element.el
         (Element.inFront (overlay model)
             :: Element.width Element.fill
-            :: Element.height Element.fill
             :: Element.inFront (menu model)
             :: Background.color (Element.rgb 0 0 0)
             :: Element.htmlAttribute (Html.Attributes.id (model.id ++ "-full"))
@@ -40,7 +40,6 @@ embed model =
             (Element.inFront (overlay model)
                 :: Element.inFront (menu model)
                 :: Element.width Element.fill
-                :: Element.height Element.fill
                 :: Background.color (Element.rgb 0 0 0)
                 :: Element.htmlAttribute (Html.Attributes.id (model.id ++ "-full"))
                 :: Events.player
@@ -99,324 +98,48 @@ fullpage model =
         )
 
 
-settings : Video -> Element Video.Msg
-settings model =
-    let
-        makeMenuButton : Video.Settings -> Element Video.Msg -> Element Video.Msg -> Element Video.Msg
-        makeMenuButton s key value =
-            Input.button [ Element.width Element.fill, Element.paddingXY 0 10 ]
-                { label =
-                    Element.row [ Element.width Element.fill, Element.spacing 20 ]
-                        [ Element.el [ Font.bold, Element.alignLeft ] key
-                        , Element.el [ Element.alignRight ] value
-                        ]
-                , onPress = Just (Video.SetSettings s)
-                }
-
-        speedButton =
-            makeMenuButton Video.Speed (Element.text "Speed") (Element.text ("x" ++ String.fromFloat model.playbackRate))
-
-        qualityButton =
-            case model.quality of
-                Just q ->
-                    makeMenuButton Video.Quality (Element.text "Quality") (Element.text (Quality.toString q))
-
-                _ ->
-                    Element.none
-
-        subtitlesButton =
-            case ( model.subtitleTrack, model.subtitles ) of
-                ( Just t, _ :: _ ) ->
-                    makeMenuButton Video.Subtitles (Element.text "Subtitles") (Element.text t.name)
-
-                ( _, _ :: _ ) ->
-                    makeMenuButton Video.Subtitles (Element.text "Subtitles") (Element.text "Disabled")
-
-                _ ->
-                    Element.none
-
-        returnButton =
-            Input.button
-                [ Element.width Element.fill
-                , Element.paddingXY 0 10
-                , Border.widthEach
-                    { bottom = 1
-                    , top = 0
-                    , left = 0
-                    , right = 0
-                    }
-                , Border.color (Element.rgba 0.5 0.5 0.5 0.75)
-                ]
-                { label = Element.text "Return"
-                , onPress = Just (Video.SetSettings Video.All)
-                }
-
-        speedOptions =
-            [ 0.5, 0.75, 1, 1.5, 2 ]
-                |> List.map
-                    (\x ->
-                        Input.button [ Element.width Element.fill, Element.paddingXY 0 10 ]
-                            { label =
-                                Element.row [ Element.width Element.fill ]
-                                    [ if x == model.playbackRate then
-                                        Icons.check False
-
-                                      else
-                                        Element.el [ Font.color (Element.rgba 0 0 0 0) ] (Icons.check False)
-                                    , Element.el
-                                        [ Element.paddingEach
-                                            { left = 10
-                                            , right = 0
-                                            , top = 0
-                                            , bottom = 0
-                                            }
-                                        ]
-                                        (Element.text ("x" ++ String.fromFloat x))
-                                    ]
-                            , onPress = Just (Video.SetPlaybackRate x)
-                            }
-                    )
-                |> (\x -> returnButton :: x)
-
-        qualityOptions =
-            model.qualities
-                |> List.map
-                    (\x ->
-                        Input.button [ Element.width Element.fill, Element.paddingXY 0 10 ]
-                            { label =
-                                Element.row [ Element.width Element.fill ]
-                                    [ if Quality.isSameOption (Just { auto = False, height = x }) model.quality then
-                                        Icons.check False
-
-                                      else
-                                        Element.el [ Font.color (Element.rgba 0 0 0 0) ] (Icons.check False)
-                                    , Element.el
-                                        [ Element.paddingEach
-                                            { left = 10
-                                            , right = 0
-                                            , top = 0
-                                            , bottom = 0
-                                            }
-                                        ]
-                                        (Element.text (Quality.toString { auto = False, height = x }))
-                                    ]
-                            , onPress = Just (Video.SetQuality { auto = x == 0, height = x })
-                            }
-                    )
-                |> (\x -> returnButton :: x)
-
-        subtitleOptions =
-            model.subtitles
-                |> List.indexedMap (\i x -> ( i, Just x ))
-                |> (\x -> ( -1, Nothing ) :: x)
-                |> List.map
-                    (\( i, x ) ->
-                        Input.button [ Element.width Element.fill, Element.paddingXY 0 10 ]
-                            { label =
-                                Element.row [ Element.width Element.fill ]
-                                    [ if Maybe.map .name model.subtitleTrack == Maybe.map .name x then
-                                        Icons.check False
-
-                                      else
-                                        Element.el [ Font.color (Element.rgba 0 0 0 0) ] (Icons.check False)
-                                    , Element.el
-                                        [ Element.paddingEach
-                                            { left = 10
-                                            , right = 0
-                                            , top = 0
-                                            , bottom = 0
-                                            }
-                                        ]
-                                        (Element.text (Maybe.withDefault "Disabled" (Maybe.map .name x)))
-                                    ]
-                            , onPress = Just (Video.SetSubtitleTrack i)
-                            }
-                    )
-                |> (\x -> returnButton :: x)
-
-        buttons =
-            case model.settings of
-                Video.All ->
-                    [ speedButton, qualityButton, subtitlesButton ]
-
-                Video.Speed ->
-                    speedOptions
-
-                Video.Quality ->
-                    qualityOptions
-
-                Video.Subtitles ->
-                    subtitleOptions
-    in
-    animatedEl
-        (if model.showSettings then
-            fadeIn
-
-         else
-            fadeOut
-        )
-        [ Element.padding 10
-        , Element.width Element.fill
-        , Element.height Element.fill
-        , Element.moveDown 20
-        ]
-        (Element.column
-            [ Background.color (Element.rgba 0.2 0.2 0.2 0.75)
-            , Element.alignRight
-            , Element.paddingXY 20 10
-            , Border.rounded 10
-            ]
-            buttons
-        )
+menu : Video -> Element msg
+menu model =
+    Element.none
 
 
 overlay : Video -> Element Video.Msg
 overlay model =
-    Element.el
-        (if model.animationFrame < 3000 then
-            Element.width Element.fill
-                :: Element.height Element.fill
-                :: Font.color (Element.rgb 1 1 1)
-                :: Events.overlay
-
-         else
-            Element.width Element.fill
-                :: Element.height Element.fill
-                :: hideCursor
-                :: Font.color (Element.rgb 1 1 1)
-                :: Events.overlay
-        )
-        (case ( not model.playing && not model.hasStarted, model.showIcon ) of
-            ( True, _ ) ->
-                Element.el
-                    [ Element.centerX
-                    , Element.centerY
-                    , Element.scale 5
-                    ]
-                    (Icons.play True)
-
-            ( _, Just icon ) ->
-                animatedEl fadeOutZoom
-                    [ Background.color (Element.rgb 0 0 0)
-                    , Border.rounded 100
-                    , Element.padding 10
-                    , Element.centerX
-                    , Element.centerY
-                    ]
-                    icon
-
-            _ ->
-                Element.none
-        )
-
-
-menu : Video -> Element Video.Msg
-menu model =
-    if model.mobile then
-        mobileMenu model
-
-    else
-        animatedEl
-            (if model.animationFrame < 3000 then
-                fadeIn
-
-             else
-                fadeOut
-            )
-            [ Element.width Element.fill, Element.alignBottom ]
-            (Element.column
-                [ Element.width Element.fill
-                , Element.alignBottom
-                , Font.color (Element.rgba 1 1 1 0.85)
-                ]
-                [ settings model
-                , Element.column
-                    [ Element.width Element.fill
-                    , Element.padding 10
-                    , Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
-                    ]
-                    [ seekbar model
-                    , Element.row
-                        [ Element.spacing 10, Element.width Element.fill ]
-                        [ playPauseButton model.playing
-                        , volumeButton model.volume model.muted
-                        , Element.el [ Element.moveDown 2.5 ] (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
-                        , Element.row [ Element.spacing 10, Element.alignRight ]
-                            [ settingsButton, fullscreenButton model.isFullscreen ]
-                        ]
-                    ]
-                ]
-            )
-
-
-mobileMenu : Video -> Element Video.Msg
-mobileMenu model =
-    let
-        rewind =
-            Input.button [ Element.centerX ]
-                { onPress = Just (Video.Seek (model.position - 10))
-                , label = Icons.rewind True
-                }
-
-        fastForward =
-            Input.button [ Element.centerX ]
-                { onPress = Just (Video.Seek (model.position + 10))
-                , label = Icons.fastForward True
-                }
-
-        playPause =
-            Input.button [ Element.centerX ]
-                { onPress = Just Video.PlayPause
-                , label =
-                    (if model.playing then
-                        Icons.pause
-
-                     else
-                        Icons.play
-                    )
-                        True
-                }
-    in
-    animatedEl
-        (if model.animationFrame < 3000 then
-            fadeIn
-
-         else
-            fadeOut
-        )
+    Element.column
         [ Element.width Element.fill
         , Element.height Element.fill
-        , Element.inFront
-            (Element.column
-                [ Element.alignBottom
-                , Element.width Element.fill
-                , Element.padding 10
-                , Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
-                , Font.color (Element.rgb 1 1 1)
-                ]
-                [ seekbar model
-                , Element.row
-                    [ Element.spacing 10, Element.width Element.fill ]
-                    [ Element.el [ Element.moveDown 2.5 ]
-                        (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
-                    , Element.row [ Element.spacing 10, Element.alignRight ]
-                        [ settingsButton, fullscreenButton model.isFullscreen ]
-                    ]
-                ]
-            )
+        , Font.color (Element.rgb 1 1 1)
         ]
-        (Element.column [ Element.height Element.fill, Element.width Element.fill ]
-            [ Element.row
-                [ Element.width Element.fill
-                , Element.centerY
-                , Font.color (Element.rgba 1 1 1 0.85)
-                ]
-                [ Element.el [ Element.width Element.fill ] rewind
-                , Element.el [ Element.width Element.fill ] playPause
-                , Element.el [ Element.width Element.fill ] fastForward
-                ]
+        [ Element.el (Element.width Element.fill :: Element.height Element.fill :: Events.overlay) Element.none, controls model ]
+
+
+controls : Video -> Element Video.Msg
+controls model =
+    fadeElement
+        3000
+        3500
+        model.animationFrame
+        [ Element.width Element.fill
+        , Element.padding 10
+        , Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
+        ]
+        (Element.column [ Element.width Element.fill ] [ seekbar model, settings model ])
+
+
+settings : Video -> Element Video.Msg
+settings model =
+    Element.row [ Element.width Element.fill ]
+        [ Element.row [ Element.alignLeft, Element.spacing 10 ]
+            [ playPauseButton model.playing
+            , volumeButton model.volume model.muted
+            , Element.el [ Element.moveDown 2.5, Element.centerY ] (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
             ]
-        )
+        , Element.row [ Element.alignRight, Element.spacing 10 ]
+            [ subtitlesButton
+            , speedButton
+            , fullscreenButton model.isFullscreen
+            ]
+        ]
 
 
 seekbar : Video -> Element Video.Msg
@@ -522,21 +245,33 @@ miniature model =
                         |> List.reverse
                         |> String.join "/"
 
+                width =
+                    toFloat (Tuple.first model.screenSize) / 10 |> round |> min 192
+
+                border =
+                    2
+
                 rightPosition =
-                    (position - 180 - 6)
+                    (position - (width + border) // 2)
                         |> max 0
-                        |> min (size - 360 - 28)
+                        |> min (size - width)
                         |> toFloat
             in
             Element.column
                 [ Element.moveRight rightPosition
                 , Element.spacing 10
+                , Element.width Element.shrink
                 ]
-                [ Element.image
-                    [ Border.color (Element.rgb 1 1 1)
-                    , Border.width 2
+                [ Html.img
+                    [ Html.Attributes.style "border-style" "solid"
+                    , Html.Attributes.style "border-width" "2px"
+                    , Html.Attributes.style "border-color" "white"
+                    , Html.Attributes.style "width" (String.fromInt width ++ "px")
+                    , Html.Attributes.src miniatureUrl
                     ]
-                    { src = miniatureUrl, description = "miniature" }
+                    []
+                    |> Element.html
+                    |> Element.el []
                 , Element.el
                     [ Element.centerX
                     , Font.shadow
@@ -550,67 +285,6 @@ miniature model =
 
         _ ->
             Element.none
-
-
-playPauseButton : Bool -> Element Video.Msg
-playPauseButton playing =
-    let
-        icon =
-            if playing then
-                Icons.pause True
-
-            else
-                Icons.play True
-    in
-    Input.button []
-        { label = icon
-        , onPress = Just Video.PlayPause
-        }
-
-
-fullscreenButton : Bool -> Element Video.Msg
-fullscreenButton isFullscreen =
-    Input.button []
-        (if isFullscreen then
-            { label = Icons.minimize False
-            , onPress = Just Video.ExitFullscreen
-            }
-
-         else
-            { label = Icons.maximize False
-            , onPress = Just Video.RequestFullscreen
-            }
-        )
-
-
-volumeButton : Float -> Bool -> Element Video.Msg
-volumeButton volume muted =
-    let
-        icon =
-            if muted then
-                Icons.volumeX
-
-            else if volume < 0.3 then
-                Icons.volume
-
-            else if volume < 0.6 then
-                Icons.volume1
-
-            else
-                Icons.volume2
-    in
-    Input.button []
-        { label = icon True
-        , onPress = Just (Video.SetVolume volume (not muted))
-        }
-
-
-settingsButton : Element Video.Msg
-settingsButton =
-    Input.button []
-        { label = Icons.settings False
-        , onPress = Just Video.ToggleSettings
-        }
 
 
 every : Float -> List ( Float, Float ) -> List ( Float, Float, Bool )
@@ -687,7 +361,7 @@ fadeOut =
         , options = []
         }
         [ P.opacity 1 ]
-        [ P.opacity 0 ]
+        [ P.opacity 0, P.property "display" "none" ]
 
 
 fadeOutZoom : Animation
@@ -722,3 +396,80 @@ animatedUi =
 hideCursor : Element.Attribute msg
 hideCursor =
     Element.htmlAttribute (Html.Attributes.style "cursor" "none")
+
+
+fadeElement : Float -> Float -> Float -> List (Element.Attribute msg) -> Element msg -> Element msg
+fadeElement start end current attr el =
+    if current > end then
+        Element.none
+
+    else
+        animatedEl
+            (if current > start then
+                fadeOut
+
+             else
+                fadeIn
+            )
+            attr
+            el
+
+
+playPauseButton : Bool -> Element Video.Msg
+playPauseButton playing =
+    let
+        icon =
+            if playing then
+                Icons.icon Material.Icons.pause
+
+            else
+                Icons.icon Material.Icons.play_arrow
+    in
+    Input.button []
+        { label = icon
+        , onPress = Just Video.PlayPause
+        }
+
+
+volumeButton : Float -> Bool -> Element Video.Msg
+volumeButton volume muted =
+    let
+        icon =
+            if muted then
+                Icons.icon Material.Icons.volume_off
+
+            else if volume < 0.5 then
+                Icons.icon Material.Icons.volume_down
+
+            else
+                Icons.icon Material.Icons.volume_up
+    in
+    Input.button []
+        { label = icon
+        , onPress = Just (Video.SetVolume volume (not muted))
+        }
+
+
+fullscreenButton : Bool -> Element Video.Msg
+fullscreenButton isFullscreen =
+    Input.button []
+        (if isFullscreen then
+            { label = Icons.icon Material.Icons.fullscreen_exit
+            , onPress = Just Video.ExitFullscreen
+            }
+
+         else
+            { label = Icons.icon Material.Icons.fullscreen
+            , onPress = Just Video.RequestFullscreen
+            }
+        )
+
+
+speedButton : Element Video.Msg
+speedButton =
+    Input.button [] { label = Icons.icon Material.Icons.speed, onPress = Nothing }
+
+
+subtitlesButton : Element Video.Msg
+subtitlesButton =
+    Input.button [] { label = Icons.icon Material.Icons.subtitles, onPress = Nothing }

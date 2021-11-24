@@ -1,8 +1,14 @@
 module Video.Icons exposing (..)
 
 import Element exposing (Element)
+import Material.Icons.Types exposing (Coloring(..), Icon)
 import Svg exposing (Svg, svg)
 import Svg.Attributes exposing (..)
+
+
+icon : Icon msg -> Element msg
+icon material =
+    Element.html (material 24 Inherit)
 
 
 svgFeatherIcon : String -> List (Svg msg) -> Bool -> Element msg
