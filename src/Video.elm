@@ -45,6 +45,7 @@ type alias Video =
     , showIcon : Maybe (Element Msg)
     , showIconRequested : Maybe (Element Msg)
     , mobile : Bool
+    , ready : Bool
     }
 
 
@@ -83,6 +84,7 @@ fromConfig config =
       , showIcon = Nothing
       , showIconRequested = Nothing
       , mobile = config.mobile
+      , ready = False
       }
     , init config.id config.url config.autoplay
     )
@@ -260,7 +262,7 @@ update msg model =
             ( { model | isFullscreen = fullscreen }, Cmd.none )
 
         NowHasQualities qualities ->
-            ( { model | qualities = qualities }, Cmd.none )
+            ( { model | qualities = qualities, ready = True }, Cmd.none )
 
         NowHasQuality quality ->
             ( { model | quality = Just quality }, Cmd.none )

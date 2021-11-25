@@ -110,7 +110,12 @@ overlay model =
         , Element.height Element.fill
         , Font.color (Element.rgb 1 1 1)
         ]
-        [ Element.el (Element.width Element.fill :: Element.height Element.fill :: Events.overlay) Element.none, controls model ]
+        (if not model.ready then
+            [ Element.el [ Element.scale 5, Element.centerX, Element.centerY ] (animatedEl rotate [] (Icons.icon Icons.spinner)) ]
+
+         else
+            [ Element.el (Element.width Element.fill :: Element.height Element.fill :: Events.overlay) Element.none, controls model ]
+        )
 
 
 controls : Video -> Element Video.Msg
@@ -372,6 +377,14 @@ fadeOutZoom =
         }
         [ P.opacity 1, P.scale 1 ]
         [ P.opacity 0, P.scale 5 ]
+
+
+rotate : Animation
+rotate =
+    Animation.fromTo
+        { duration = 1000, options = [ Animation.loop, Animation.linear ] }
+        [ P.rotate 0 ]
+        [ P.rotate 360 ]
 
 
 animatedEl : Animation -> List (Element.Attribute msg) -> Element msg -> Element msg
