@@ -12,11 +12,8 @@ endif
 
 BUILD_DIR=js
 
-all: dist
-
-dev: js/main.js
-
-release: js/main.min.js
+release-dev: dist/polymny-video-elm.js dist/polymny-video-full.js
+release: dist/polymny-video-elm.min.js dist/polymny-video-full.min.js
 
 js/main.js: src/**
 	$(ELM) make src/Main/*.elm --output $(BUILD_DIR)/main.js
@@ -30,15 +27,30 @@ js/main.tmp.js: src/**
 clean:
 	@rm -rf $(BUILD_DIR)/{main.js,main.min.js}
 
-dist: js/main.min.js js/ports.js
+
+dist/polymny-video-full.min.js: js/main.min.js js/ports.js
 	@mkdir -p dist
-	@# Full version
 	@curl https://cdn.jsdelivr.net/npm/hls.js@latest > dist/polymny-video-full.min.js 2>/dev/null
 	@echo >> dist/polymny-video-full.min.js
 	@cat js/main.min.js >> dist/polymny-video-full.min.js
 	@uglifyjs js/ports.js >> dist/polymny-video-full.min.js
-	@# Elm version
+
+dist/polymny-video-elm.min.js: js/main.min.js js/ports.js
+	@ mkdir -p dist
 	@curl https://cdn.jsdelivr.net/npm/hls.js@latest > dist/polymny-video-elm.min.js 2>/dev/null
 	@echo >> dist/polymny-video-elm.min.js
 	@uglifyjs js/ports.js >> dist/polymny-video-elm.min.js
 
+
+dist/polymny-video-full.js: js/main.js js/ports.js
+	@mkdir -p dist
+	@curl https://cdn.jsdelivr.net/npm/hls.js@latest > dist/polymny-video-full.js 2>/dev/null
+	@echo >> dist/polymny-video-full.js
+	@cat js/main.js >> dist/polymny-video-full.js
+	@cat js/ports.js >> dist/polymny-video-full.js
+
+dist/polymny-video-elm.js: js/main.js js/ports.js
+	@mkdir -p dist
+	@curl https://cdn.jsdelivr.net/npm/hls.js@latest > dist/polymny-video-elm.js 2>/dev/null
+	@echo >> dist/polymny-video-elm.js
+	@cat js/ports.js >> dist/polymny-video-elm.js

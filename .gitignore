@@ -2,3 +2,5 @@ video
 elm-stuff
 js
 *html
+dist/polymny-video-elm.js
+dist/polymny-video-full.js
