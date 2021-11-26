@@ -13,9 +13,7 @@ port module Video exposing
     , update
     )
 
-import Element exposing (Element)
 import Json.Decode as Decode
-import Video.Icons as Icons
 import Video.Quality as Quality exposing (Quality)
 
 
@@ -32,13 +30,11 @@ type alias Video =
     , isFullscreen : Bool
     , quality : Maybe Quality.Quality
     , qualities : List Int
-    , showBar : Bool
     , animationFrame : Float
     , size : ( Int, Int )
     , screenSize : ( Int, Int )
     , playbackRate : Float
     , settings : Settings
-    , showSettings : Bool
     , subtitles : List SubtitleTrack
     , subtitleTrack : Maybe SubtitleTrack
     , showMiniature : Maybe ( Int, Int )
@@ -69,13 +65,11 @@ fromConfig config =
       , isFullscreen = False
       , quality = Nothing
       , qualities = []
-      , showBar = True
       , animationFrame = 0
       , size = ( 0, 0 )
       , screenSize = ( 0, 0 )
       , playbackRate = 1
-      , settings = All
-      , showSettings = False
+      , settings = None
       , subtitles = []
       , subtitleTrack = Nothing
       , showMiniature = Nothing
@@ -87,7 +81,7 @@ fromConfig config =
 
 
 type Settings
-    = All
+    = None
     | Speed
     | Quality
     | Subtitles
@@ -107,7 +101,6 @@ type Msg
     = Noop
     | PlayPause
     | Seek Float
-    | ToggleSettings
     | SetSettings Settings
     | SetPlaybackRate Float
     | SetQuality Quality.Quality
@@ -147,10 +140,7 @@ update msg model =
             ( model, seek model.id time )
 
         SetPlaybackRate rate ->
-            ( { model | showSettings = False, settings = All }, setPlaybackRate model.id rate )
-
-        ToggleSettings ->
-            ( { model | showSettings = not model.showSettings }, Cmd.none )
+            ( model, setPlaybackRate model.id rate )
 
         SetSettings s ->
             ( { model | settings = s }, Cmd.none )
@@ -162,10 +152,10 @@ update msg model =
             ( model, exitFullscreen model.id )
 
         SetQuality q ->
-            ( { model | showSettings = False, settings = All }, setQuality model.id q )
+            ( model, setQuality model.id q )
 
         SetSubtitleTrack t ->
-            ( { model | showSettings = False, settings = All }, setSubtitleTrack model.id t )
+            ( model, setSubtitleTrack model.id t )
 
         SetVolume v m ->
             ( model, setVolume model.id { volume = v, muted = m } )
@@ -175,16 +165,15 @@ update msg model =
                 animationFrame =
                     model.animationFrame + delta
 
-                ( showSettings, settings ) =
+                settings =
                     if animationFrame > 3500 then
-                        ( False, All )
+                        None
 
                     else
-                        ( model.showSettings, model.settings )
+                        model.settings
             in
             ( { model
                 | animationFrame = animationFrame
-                , showSettings = showSettings
                 , settings = settings
               }
             , Cmd.none

@@ -43,7 +43,7 @@ subs model =
             )
         , Video.nowHasScreenSize Video.NowHasScreenSize
         , Browser.Events.onAnimationFrameDelta Video.AnimationFrameDelta
-        , Browser.Events.onKeyDown (decodeKeyDown model)
+        , Browser.Events.onKeyDown (decodeKeyDown False model)
         , Browser.Events.onResize (\x y -> Video.NowHasScreenSize ( x, y ))
         ]
 
@@ -70,9 +70,10 @@ video model =
     ]
 
 
-overlay : List (Element.Attribute Video.Msg)
-overlay =
+overlay : Video -> List (Element.Attribute Video.Msg)
+overlay model =
     [ Element.htmlAttribute (Html.Events.on "click" (Decode.succeed Video.PlayPause))
+    , Element.htmlAttribute (Html.Events.on "keydown" (decodeKeyDown True model))
     ]
 
 
@@ -173,50 +174,40 @@ decodeMouseLeave =
     Decode.succeed (Video.NowHasMiniature Nothing)
 
 
-decodeKeyDown : Video -> Decode.Decoder Video.Msg
-decodeKeyDown model =
-    Decode.field "keyCode" Decode.int
+decodeKeyDown : Bool -> Video -> Decode.Decoder Video.Msg
+decodeKeyDown focusonly model =
+    Decode.field "code" Decode.string
         |> Decode.andThen
             (\x ->
-                case x of
-                    -- Enter key
-                    32 ->
+                case ( focusonly, x ) of
+                    ( True, "Space" ) ->
                         Decode.succeed Video.PlayPause
 
-                    -- J key
-                    74 ->
+                    ( _, "KeyJ" ) ->
                         Decode.succeed (Video.Seek (max 0 (model.position - 10)))
 
-                    -- L key
-                    76 ->
+                    ( _, "KeyL" ) ->
                         Decode.succeed (Video.Seek (min model.duration (model.position + 10)))
 
-                    -- K key
-                    75 ->
+                    ( _, "KeyK" ) ->
                         Decode.succeed Video.PlayPause
 
-                    -- Left arrow
-                    37 ->
+                    ( True, "LeftArrow" ) ->
                         Decode.succeed (Video.Seek (max 0 (model.position - 5)))
 
-                    -- Right arrow
-                    39 ->
+                    ( True, "RightArrow" ) ->
                         Decode.succeed (Video.Seek (min model.duration (model.position + 5)))
 
-                    -- Down arrow
-                    40 ->
+                    ( True, "DownArrow" ) ->
                         Decode.succeed (Video.SetVolume (max 0 (model.volume - 0.1)) model.muted)
 
-                    -- Top arrow
-                    38 ->
+                    ( True, "TopArrow" ) ->
                         Decode.succeed (Video.SetVolume (min 1 (model.volume + 0.1)) model.muted)
 
-                    -- M key
-                    77 ->
+                    ( _, "KeyM" ) ->
                         Decode.succeed (Video.SetVolume model.volume (not model.muted))
 
-                    -- F key
-                    70 ->
+                    ( _, "KeyF" ) ->
                         Decode.succeed
                             (if model.isFullscreen then
                                 Video.ExitFullscreen
@@ -225,48 +216,68 @@ decodeKeyDown model =
                                 Video.RequestFullscreen
                             )
 
-                    -- 0 key
-                    48 ->
+                    ( _, "Digit0" ) ->
                         Decode.succeed (Video.Seek 0)
 
-                    -- 1 key
-                    49 ->
+                    ( _, "Numpad0" ) ->
+                        Decode.succeed (Video.Seek 0)
+
+                    ( _, "Digit1" ) ->
                         Decode.succeed (Video.Seek (0.1 * model.duration))
 
-                    -- 2 key
-                    50 ->
+                    ( _, "Numpad1" ) ->
+                        Decode.succeed (Video.Seek (0.1 * model.duration))
+
+                    ( _, "Digit2" ) ->
                         Decode.succeed (Video.Seek (0.2 * model.duration))
 
-                    -- 3 key
-                    51 ->
+                    ( _, "Numpad2" ) ->
+                        Decode.succeed (Video.Seek (0.2 * model.duration))
+
+                    ( _, "Digit3" ) ->
                         Decode.succeed (Video.Seek (0.3 * model.duration))
 
-                    -- 4 key
-                    52 ->
+                    ( _, "Numpad3" ) ->
+                        Decode.succeed (Video.Seek (0.3 * model.duration))
+
+                    ( _, "Digit4" ) ->
                         Decode.succeed (Video.Seek (0.4 * model.duration))
 
-                    -- 5 key
-                    53 ->
+                    ( _, "Numpad4" ) ->
+                        Decode.succeed (Video.Seek (0.4 * model.duration))
+
+                    ( _, "Digit5" ) ->
                         Decode.succeed (Video.Seek (0.5 * model.duration))
 
-                    -- 6 key
-                    54 ->
+                    ( _, "Numpad5" ) ->
+                        Decode.succeed (Video.Seek (0.5 * model.duration))
+
+                    ( _, "Digit6" ) ->
                         Decode.succeed (Video.Seek (0.6 * model.duration))
 
-                    -- 7 key
-                    55 ->
+                    ( _, "Numpad6" ) ->
+                        Decode.succeed (Video.Seek (0.6 * model.duration))
+
+                    ( _, "Digit7" ) ->
                         Decode.succeed (Video.Seek (0.7 * model.duration))
 
-                    -- 8 key
-                    56 ->
+                    ( _, "Numpad7" ) ->
+                        Decode.succeed (Video.Seek (0.7 * model.duration))
+
+                    ( _, "Digit8" ) ->
                         Decode.succeed (Video.Seek (0.8 * model.duration))
 
-                    -- 9 key
-                    57 ->
+                    ( _, "Numpad8" ) ->
+                        Decode.succeed (Video.Seek (0.8 * model.duration))
+
+                    ( _, "Digit10" ) ->
+                        Decode.succeed (Video.Seek (0.9 * model.duration))
+
+                    ( _, "Numpad9" ) ->
                         Decode.succeed (Video.Seek (0.9 * model.duration))
 
                     _ ->
-                        Decode.fail ("no shortcut for code " ++ String.fromInt x)
+                        Decode.fail ("no shortcut for code " ++ x)
             )
 
 

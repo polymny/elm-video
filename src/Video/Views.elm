@@ -114,7 +114,7 @@ overlay model =
             [ Element.el [ Element.scale 5, Element.centerX, Element.centerY ] (animatedEl rotate [] (Icons.icon Icons.spinner)) ]
 
          else
-            [ Element.el (Element.width Element.fill :: Element.height Element.fill :: Events.overlay) Element.none, controls model ]
+            [ Element.el (Element.width Element.fill :: Element.height Element.fill :: Events.overlay model) Element.none, controls model ]
         )
 
 
