@@ -42,8 +42,6 @@ type alias Video =
     , subtitles : List SubtitleTrack
     , subtitleTrack : Maybe SubtitleTrack
     , showMiniature : Maybe ( Int, Int )
-    , showIcon : Maybe (Element Msg)
-    , showIconRequested : Maybe (Element Msg)
     , mobile : Bool
     , ready : Bool
     }
@@ -81,8 +79,6 @@ fromConfig config =
       , subtitles = []
       , subtitleTrack = Nothing
       , showMiniature = Nothing
-      , showIcon = Nothing
-      , showIconRequested = Nothing
       , mobile = config.mobile
       , ready = False
       }
@@ -145,28 +141,10 @@ update msg model =
             ( model, Cmd.none )
 
         PlayPause ->
-            ( { model
-                | showIconRequested =
-                    if model.playing then
-                        Just (Icons.pause True)
-
-                    else
-                        Just (Icons.play True)
-              }
-            , playPause model.id
-            )
+            ( model, playPause model.id )
 
         Seek time ->
-            ( { model
-                | showIconRequested =
-                    if time > model.position then
-                        Just (Icons.fastForward True)
-
-                    else
-                        Just (Icons.rewind True)
-              }
-            , seek model.id time
-            )
+            ( model, seek model.id time )
 
         SetPlaybackRate rate ->
             ( { model | showSettings = False, settings = All }, setPlaybackRate model.id rate )
@@ -190,19 +168,7 @@ update msg model =
             ( { model | showSettings = False, settings = All }, setSubtitleTrack model.id t )
 
         SetVolume v m ->
-            ( { model
-                | showIconRequested =
-                    if m then
-                        Just (Icons.volumeX True)
-
-                    else if v >= model.volume then
-                        Just (Icons.volume2 True)
-
-                    else
-                        Just (Icons.volume1 True)
-              }
-            , setVolume model.id { volume = v, muted = m }
-            )
+            ( model, setVolume model.id { volume = v, muted = m } )
 
         AnimationFrameDelta delta ->
             let
@@ -215,24 +181,11 @@ update msg model =
 
                     else
                         ( model.showSettings, model.settings )
-
-                ( showIconRequested, showIcon ) =
-                    case ( model.showIconRequested, model.showIcon ) of
-                        ( Just a, Just _ ) ->
-                            ( Just a, Nothing )
-
-                        ( Just a, Nothing ) ->
-                            ( Nothing, Just a )
-
-                        ( Nothing, a ) ->
-                            ( Nothing, a )
             in
             ( { model
                 | animationFrame = animationFrame
                 , showSettings = showSettings
                 , settings = settings
-                , showIconRequested = showIconRequested
-                , showIcon = showIcon
               }
             , Cmd.none
             )
