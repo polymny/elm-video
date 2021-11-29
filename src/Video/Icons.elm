@@ -30,6 +30,6 @@ spinner =
         ]
 
 
-icon : Icon msg -> Element msg
-icon material =
-    Element.html (material 24 Inherit)
+icon : Int -> Icon msg -> Element msg
+icon size material =
+    Element.html (material size Inherit)

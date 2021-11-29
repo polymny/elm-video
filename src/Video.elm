@@ -34,7 +34,7 @@ type alias Video =
     , size : ( Int, Int )
     , screenSize : ( Int, Int )
     , playbackRate : Float
-    , settings : Settings
+    , settings : Maybe Settings
     , subtitles : List SubtitleTrack
     , subtitleTrack : Maybe SubtitleTrack
     , showMiniature : Maybe ( Int, Int )
@@ -69,7 +69,7 @@ fromConfig config =
       , size = ( 0, 0 )
       , screenSize = ( 0, 0 )
       , playbackRate = 1
-      , settings = None
+      , settings = Nothing
       , subtitles = []
       , subtitleTrack = Nothing
       , showMiniature = Nothing
@@ -81,8 +81,7 @@ fromConfig config =
 
 
 type Settings
-    = None
-    | Speed
+    = Speed
     | Quality
     | Subtitles
 
@@ -101,7 +100,7 @@ type Msg
     = Noop
     | PlayPause
     | Seek Float
-    | SetSettings Settings
+    | ToggleSettings Settings
     | SetPlaybackRate Float
     | SetQuality Quality.Quality
     | SetSubtitleTrack Int
@@ -142,8 +141,21 @@ update msg model =
         SetPlaybackRate rate ->
             ( model, setPlaybackRate model.id rate )
 
-        SetSettings s ->
-            ( { model | settings = s }, Cmd.none )
+        ToggleSettings s ->
+            let
+                newSettings =
+                    case model.settings of
+                        Nothing ->
+                            Just s
+
+                        Just a ->
+                            if s == a then
+                                Nothing
+
+                            else
+                                Just s
+            in
+            ( { model | settings = newSettings, animationFrame = 0 }, Cmd.none )
 
         RequestFullscreen ->
             ( model, requestFullscreen model.id )
@@ -167,7 +179,7 @@ update msg model =
 
                 settings =
                     if animationFrame > 3500 then
-                        None
+                        Nothing
 
                     else
                         model.settings
@@ -213,7 +225,7 @@ update msg model =
             ( { model | size = size }, Cmd.none )
 
         NowHasScreenSize size ->
-            ( { model | screenSize = size }, Cmd.none )
+            ( { model | screenSize = Debug.log "screenSize" size }, Cmd.none )
 
         NowHasPlaybackRate rate ->
             ( { model | playbackRate = rate }, Cmd.none )

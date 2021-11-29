@@ -8,6 +8,7 @@ import Element.Input as Input
 import Html
 import Html.Attributes
 import Material.Icons
+import Material.Icons.Types exposing (Icon)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
@@ -109,13 +110,104 @@ overlay model =
         [ Element.width Element.fill
         , Element.height Element.fill
         , Font.color (Element.rgb 1 1 1)
+        , Font.size ((model.size |> Tuple.second) // scale)
         ]
         (if not model.ready then
-            [ Element.el [ Element.scale 5, Element.centerX, Element.centerY ] (animatedEl rotate [] (Icons.icon Icons.spinner)) ]
+            [ Element.el [ Element.scale 5, Element.centerX, Element.centerY ] (animatedEl rotate [] (icon model Icons.spinner)) ]
 
          else
-            [ Element.el (Element.width Element.fill :: Element.height Element.fill :: Events.overlay model) Element.none, controls model ]
+            [ Element.el (Element.width Element.fill :: Element.height Element.fill :: Events.overlay model) Element.none
+            , Element.row [ Element.width Element.fill ]
+                [ Element.el (Element.width Element.fill :: Element.height Element.fill :: Events.overlay model) Element.none
+                , settings model
+                ]
+            , controls model
+            ]
         )
+
+
+settings : Video -> Element Video.Msg
+settings model =
+    case model.settings of
+        Nothing ->
+            Element.none
+
+        Just a ->
+            let
+                ( title, element, size ) =
+                    case a of
+                        Video.Speed ->
+                            let
+                                playbackRateButton x =
+                                    Input.button
+                                        (if x == model.playbackRate then
+                                            [ Element.width Element.fill, Font.bold ]
+
+                                         else
+                                            [ Element.width Element.fill ]
+                                        )
+                                        { label =
+                                            Element.column [ Element.width Element.fill ]
+                                                [ icon model
+                                                    (if x == model.playbackRate then
+                                                        Material.Icons.radio_button_checked
+
+                                                     else
+                                                        Material.Icons.radio_button_unchecked
+                                                    )
+                                                    |> Element.el [ Element.centerX ]
+                                                , Element.el [ Element.centerX ] (Element.text (String.fromFloat x ++ "x"))
+                                                ]
+                                        , onPress = Just (Video.SetPlaybackRate x)
+                                        }
+
+                                options =
+                                    [ 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2 ]
+                                        |> List.map playbackRateButton
+                                        |> Element.row [ Element.width Element.fill ]
+                            in
+                            ( "Playback rate", options, Element.width Element.fill )
+
+                        Video.Quality ->
+                            let
+                                qualityOption x =
+                                    Input.button []
+                                        { label =
+                                            Element.row []
+                                                [ if Quality.isSameOption (Just { auto = False, height = x }) model.quality then
+                                                    Element.el [] (icon model Material.Icons.check)
+
+                                                  else
+                                                    Element.el [ Font.color (Element.rgba 0 0 0 0) ] (icon model Material.Icons.check)
+                                                , Element.text (Quality.toString { auto = False, height = x })
+                                                ]
+                                        , onPress = Just (Video.SetQuality { auto = x == 0, height = x })
+                                        }
+
+                                options =
+                                    model.qualities
+                                        |> List.map qualityOption
+                                        |> Element.column []
+                            in
+                            ( "Quality", options, Element.alignRight )
+
+                        _ ->
+                            ( "Nothing", Element.text (Debug.toString model.settings), Element.alignRight )
+            in
+            fadeElement 3000
+                3500
+                model.animationFrame
+                [ Element.padding 20, size ]
+                (Element.column
+                    [ Element.width Element.fill
+                    , Element.padding 20
+                    , Border.rounded 10
+                    , Border.width 1
+                    , Border.color (Element.rgba 0.75 0.75 0.75 0.75)
+                    , Background.color (Element.rgba 0 0 0 0.75)
+                    ]
+                    [ Element.el [ Font.bold ] (Element.text title), element ]
+                )
 
 
 controls : Video -> Element Video.Msg
@@ -128,21 +220,22 @@ controls model =
         , Element.padding 10
         , Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
         ]
-        (Element.column [ Element.width Element.fill ] [ seekbar model, settings model ])
+        (Element.column [ Element.width Element.fill ] [ seekbar model, buttonBar model ])
 
 
-settings : Video -> Element Video.Msg
-settings model =
+buttonBar : Video -> Element Video.Msg
+buttonBar model =
     Element.row [ Element.width Element.fill ]
         [ Element.row [ Element.alignLeft, Element.spacing 10 ]
-            [ playPauseButton model.playing
-            , volumeButton model.volume model.muted
+            [ playPauseButton model
+            , volumeButton model
             , Element.el [ Element.moveDown 2.5, Element.centerY ] (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
             ]
         , Element.row [ Element.alignRight, Element.spacing 10 ]
-            [ subtitlesButton
-            , speedButton
-            , fullscreenButton model.isFullscreen
+            [ subtitlesButton model
+            , speedButton model
+            , qualityButton model
+            , fullscreenButton model
             ]
         ]
 
@@ -251,7 +344,7 @@ miniature model =
                         |> String.join "/"
 
                 width =
-                    toFloat (Tuple.first model.screenSize) / 10 |> round |> min 192
+                    toFloat (Tuple.first model.size) / 10 |> round |> min 192
 
                 border =
                     2
@@ -428,61 +521,86 @@ fadeElement start end current attr el =
             el
 
 
-playPauseButton : Bool -> Element Video.Msg
-playPauseButton playing =
+playPauseButton : Video -> Element Video.Msg
+playPauseButton model =
     let
-        icon =
-            if playing then
-                Icons.icon Material.Icons.pause
+        i =
+            if model.playing then
+                icon model Material.Icons.pause
 
             else
-                Icons.icon Material.Icons.play_arrow
+                icon model Material.Icons.play_arrow
     in
     Input.button []
-        { label = icon
+        { label = i
         , onPress = Just Video.PlayPause
         }
 
 
-volumeButton : Float -> Bool -> Element Video.Msg
-volumeButton volume muted =
+volumeButton : Video -> Element Video.Msg
+volumeButton model =
     let
-        icon =
-            if muted then
-                Icons.icon Material.Icons.volume_off
+        i =
+            if model.muted then
+                icon model Material.Icons.volume_off
 
-            else if volume < 0.5 then
-                Icons.icon Material.Icons.volume_down
+            else if model.volume < 0.5 then
+                icon model Material.Icons.volume_down
 
             else
-                Icons.icon Material.Icons.volume_up
+                icon model Material.Icons.volume_up
     in
     Input.button []
-        { label = icon
-        , onPress = Just (Video.SetVolume volume (not muted))
+        { label = i
+        , onPress = Just (Video.SetVolume model.volume (not model.muted))
         }
 
 
-fullscreenButton : Bool -> Element Video.Msg
-fullscreenButton isFullscreen =
+fullscreenButton : Video -> Element Video.Msg
+fullscreenButton model =
     Input.button []
-        (if isFullscreen then
-            { label = Icons.icon Material.Icons.fullscreen_exit
+        (if model.isFullscreen then
+            { label = icon model Material.Icons.fullscreen_exit
             , onPress = Just Video.ExitFullscreen
             }
 
          else
-            { label = Icons.icon Material.Icons.fullscreen
+            { label = icon model Material.Icons.fullscreen
             , onPress = Just Video.RequestFullscreen
             }
         )
 
 
-speedButton : Element Video.Msg
-speedButton =
-    Input.button [] { label = Icons.icon Material.Icons.speed, onPress = Nothing }
+speedButton : Video -> Element Video.Msg
+speedButton model =
+    Input.button []
+        { label = icon model Material.Icons.speed
+        , onPress = Just (Video.ToggleSettings Video.Speed)
+        }
 
 
-subtitlesButton : Element Video.Msg
-subtitlesButton =
-    Input.button [] { label = Icons.icon Material.Icons.subtitles, onPress = Nothing }
+subtitlesButton : Video -> Element Video.Msg
+subtitlesButton model =
+    Input.button []
+        { label = icon model Material.Icons.subtitles
+        , onPress = Just (Video.ToggleSettings Video.Subtitles)
+        }
+
+
+qualityButton : Video -> Element Video.Msg
+qualityButton model =
+    Input.button []
+        { label = icon model Material.Icons.settings
+        , onPress = Just (Video.ToggleSettings Video.Quality)
+        }
+
+
+icon : Video -> Icon msg -> Element msg
+icon model i =
+    Element.el [ Element.padding ((model.screenSize |> Tuple.second) // (scale * 4)) ]
+        (Icons.icon ((model.screenSize |> Tuple.second) // scale) i)
+
+
+scale : Int
+scale =
+    25
