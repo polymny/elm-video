@@ -191,8 +191,31 @@ settings model =
                             in
                             ( "Quality", options, Element.alignRight )
 
-                        _ ->
-                            ( "Nothing", Element.text (Debug.toString model.settings), Element.alignRight )
+                        Video.Subtitles ->
+                            let
+                                subtitlesOption : ( Int, Maybe Video.SubtitleTrack ) -> Element Video.Msg
+                                subtitlesOption ( id, track ) =
+                                    Input.button []
+                                        { label =
+                                            Element.row []
+                                                [ if track == model.subtitleTrack then
+                                                    Element.el [] (icon model Material.Icons.check)
+
+                                                  else
+                                                    Element.el [ Font.color (Element.rgba 0 0 0 0) ] (icon model Material.Icons.check)
+                                                , Element.text (track |> Maybe.map .name |> Maybe.withDefault "Disabled")
+                                                ]
+                                        , onPress = Just (Video.SetSubtitleTrack id)
+                                        }
+
+                                options =
+                                    model.subtitles
+                                        |> List.indexedMap (\id x -> ( id, Just x ))
+                                        |> (::) ( -1, Nothing )
+                                        |> List.map subtitlesOption
+                                        |> Element.column []
+                            in
+                            ( "Subtitles", options, Element.alignRight )
             in
             fadeElement 3000
                 3500
@@ -581,18 +604,33 @@ speedButton model =
 
 subtitlesButton : Video -> Element Video.Msg
 subtitlesButton model =
-    Input.button []
-        { label = icon model Material.Icons.subtitles
-        , onPress = Just (Video.ToggleSettings Video.Subtitles)
-        }
+    if not (List.isEmpty model.subtitles) then
+        Input.button []
+            { label =
+                icon model
+                    (if model.subtitleTrack /= Nothing then
+                        Material.Icons.subtitles
+
+                     else
+                        Material.Icons.subtitles_off
+                    )
+            , onPress = Just (Video.ToggleSettings Video.Subtitles)
+            }
+
+    else
+        Element.none
 
 
 qualityButton : Video -> Element Video.Msg
 qualityButton model =
-    Input.button []
-        { label = icon model Material.Icons.settings
-        , onPress = Just (Video.ToggleSettings Video.Quality)
-        }
+    if not (List.isEmpty model.qualities) then
+        Input.button []
+            { label = icon model Material.Icons.settings
+            , onPress = Just (Video.ToggleSettings Video.Quality)
+            }
+
+    else
+        Element.none
 
 
 icon : Video -> Icon msg -> Element msg
