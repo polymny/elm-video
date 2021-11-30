@@ -5,6 +5,7 @@ port module Video exposing
     , Video
     , fromConfig
     , init
+    , nowHasPlayerSize
     , nowHasQualities
     , nowHasQuality
     , nowHasScreenSize
@@ -33,6 +34,7 @@ type alias Video =
     , animationFrame : Float
     , size : ( Int, Int )
     , screenSize : ( Int, Int )
+    , playerSize : ( Int, Int )
     , playbackRate : Float
     , settings : Maybe Settings
     , subtitles : List SubtitleTrack
@@ -68,6 +70,7 @@ fromConfig config =
       , animationFrame = 0
       , size = ( 0, 0 )
       , screenSize = ( 0, 0 )
+      , playerSize = ( 0, 0 )
       , playbackRate = 1
       , settings = Nothing
       , subtitles = []
@@ -120,6 +123,7 @@ type Msg
     | NowHasQuality Quality.Quality
     | NowHasSize ( Int, Int )
     | NowHasScreenSize ( Int, Int )
+    | NowHasPlayerSize ( Int, Int )
     | NowHasPlaybackRate Float
     | NowHasSubtitles (List SubtitleTrack)
     | NowHasSubtitleTrack (Maybe SubtitleTrack)
@@ -225,7 +229,10 @@ update msg model =
             ( { model | size = size }, Cmd.none )
 
         NowHasScreenSize size ->
-            ( { model | screenSize = Debug.log "screenSize" size }, Cmd.none )
+            ( { model | screenSize = size }, Cmd.none )
+
+        NowHasPlayerSize size ->
+            ( { model | playerSize = size }, Cmd.none )
 
         NowHasPlaybackRate rate ->
             ( { model | playbackRate = rate }, Cmd.none )
@@ -350,3 +357,11 @@ port polymnyVideoNowHasScreenSize : (( Int, Int ) -> msg) -> Sub msg
 nowHasScreenSize : (( Int, Int ) -> msg) -> Sub msg
 nowHasScreenSize =
     polymnyVideoNowHasScreenSize
+
+
+port polymnyVideoNowHasPlayerSize : (( Int, Int ) -> msg) -> Sub msg
+
+
+nowHasPlayerSize : (( Int, Int ) -> msg) -> Sub msg
+nowHasPlayerSize =
+    polymnyVideoNowHasPlayerSize

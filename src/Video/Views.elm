@@ -110,7 +110,7 @@ overlay model =
         [ Element.width Element.fill
         , Element.height Element.fill
         , Font.color (Element.rgb 1 1 1)
-        , Font.size ((model.size |> Tuple.second) // scale)
+        , Font.size ((model.playerSize |> Tuple.second) // round (1.5 * toFloat scale))
         ]
         (if not model.ready then
             [ Element.el [ Element.scale 5, Element.centerX, Element.centerY ] (animatedEl rotate [] (icon model Icons.spinner)) ]
@@ -344,7 +344,7 @@ miniature model =
                         |> String.join "/"
 
                 width =
-                    toFloat (Tuple.first model.size) / 10 |> round |> min 192
+                    toFloat (Tuple.first model.playerSize) / 5 |> round
 
                 border =
                     2
@@ -597,10 +597,10 @@ qualityButton model =
 
 icon : Video -> Icon msg -> Element msg
 icon model i =
-    Element.el [ Element.padding ((model.screenSize |> Tuple.second) // (scale * 4)) ]
-        (Icons.icon ((model.screenSize |> Tuple.second) // scale) i)
+    Element.el [ Element.padding ((model.playerSize |> Tuple.second) // (scale * 4)) ]
+        (Icons.icon ((model.playerSize |> Tuple.second) // scale) i)
 
 
 scale : Int
 scale =
-    25
+    15

@@ -42,9 +42,10 @@ subs model =
                         Video.Noop
             )
         , Video.nowHasScreenSize Video.NowHasScreenSize
+        , Video.nowHasPlayerSize Video.NowHasPlayerSize
+        , Browser.Events.onResize (\x y -> Video.NowHasScreenSize ( x, y ))
         , Browser.Events.onAnimationFrameDelta Video.AnimationFrameDelta
         , Browser.Events.onKeyDown (decodeKeyDown False model)
-        , Browser.Events.onResize (\x y -> Video.NowHasScreenSize ( x, y ))
         ]
 
 

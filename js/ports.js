@@ -65,6 +65,11 @@ const PolymnyVideo = (function() {
         app.ports.polymnyVideoInit.subscribe(function(arg) {
             requestAnimationFrame(function() {
                 const video = document.getElementById(arg[0]);
+                app.ports.polymnyVideoNowHasPlayerSize.send([video.offsetWidth, video.offsetHeight]);
+                window.addEventListener('resize', () => {
+                    app.ports.polymnyVideoNowHasPlayerSize.send([video.offsetWidth, video.offsetHeight]);
+                });
+
                 if (Hls.isSupported()) {
                     hls = new Hls();
                     window.hls = hls;
