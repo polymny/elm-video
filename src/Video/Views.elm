@@ -115,6 +115,9 @@ overlay model =
         (if not model.ready then
             [ Element.el [ Element.scale 5, Element.centerX, Element.centerY ] (animatedEl rotate [] (icon model Icons.spinner)) ]
 
+         else if not model.hasStarted then
+            [ Element.el (Element.scale 5 :: Element.centerX :: Element.centerY :: Events.overlay model) (icon model Material.Icons.play_circle_outline) ]
+
          else
             [ Element.el (Element.width Element.fill :: Element.height Element.fill :: Events.overlay model) Element.none
             , Element.row [ Element.width Element.fill ]
@@ -138,7 +141,8 @@ settings model =
                     case a of
                         Video.Speed ->
                             let
-                                playbackRateButton x =
+                                playbackRateOption : Float -> Element Video.Msg
+                                playbackRateOption x =
                                     Input.button
                                         (if x == model.playbackRate then
                                             [ Element.width Element.fill, Font.bold ]
@@ -163,13 +167,14 @@ settings model =
 
                                 options =
                                     [ 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2 ]
-                                        |> List.map playbackRateButton
+                                        |> List.map playbackRateOption
                                         |> Element.row [ Element.width Element.fill ]
                             in
                             ( "Playback rate", options, Element.width Element.fill )
 
                         Video.Quality ->
                             let
+                                qualityOption : Int -> Element Video.Msg
                                 qualityOption x =
                                     Input.button []
                                         { label =
