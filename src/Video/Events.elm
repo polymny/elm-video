@@ -1,4 +1,4 @@
-module Video.Events exposing (overlay, player, seekBar, subs, video)
+module Video.Events exposing (overlay, overlayKey, player, seekBar, subs, video, volumeBar)
 
 import Browser.Events
 import Element
@@ -74,8 +74,12 @@ video model =
 overlay : Video -> List (Element.Attribute Video.Msg)
 overlay model =
     [ Element.htmlAttribute (Html.Events.on "click" (Decode.succeed Video.PlayPause))
-    , Element.htmlAttribute (Html.Events.on "keydown" (decodeKeyDown True model))
     ]
+
+
+overlayKey : Video -> Element.Attribute Video.Msg
+overlayKey model =
+    Element.htmlAttribute (Html.Events.on "keydown" (decodeKeyDown True model))
 
 
 seekBar : Video -> List (Element.Attribute Video.Msg)
@@ -86,6 +90,18 @@ seekBar model =
         , Html.Events.on "mouseleave" decodeMouseLeave
         , Html.Events.on "mousemove" decodeMouseEnter
         ]
+
+
+volumeBar : Element.Attribute Video.Msg
+volumeBar =
+    Element.htmlAttribute (Html.Events.on "click" decodeVolumeBar)
+
+
+decodeVolumeBar : Decode.Decoder Video.Msg
+decodeVolumeBar =
+    Decode.map2 (\x y -> Video.SetVolume (toFloat x / toFloat y) False)
+        (Decode.field "layerX" Decode.int)
+        (Decode.field "target" <| Decode.field "offsetWidth" Decode.int)
 
 
 decodeDurationChanged : Decode.Decoder Video.Msg
@@ -193,16 +209,16 @@ decodeKeyDown focusonly model =
                     ( _, "KeyK" ) ->
                         Decode.succeed Video.PlayPause
 
-                    ( True, "LeftArrow" ) ->
+                    ( True, "ArrowLeft" ) ->
                         Decode.succeed (Video.Seek (max 0 (model.position - 5)))
 
-                    ( True, "RightArrow" ) ->
+                    ( True, "ArrowRight" ) ->
                         Decode.succeed (Video.Seek (min model.duration (model.position + 5)))
 
-                    ( True, "DownArrow" ) ->
+                    ( True, "ArrowDown" ) ->
                         Decode.succeed (Video.SetVolume (max 0 (model.volume - 0.1)) model.muted)
 
-                    ( True, "TopArrow" ) ->
+                    ( True, "ArrowUp" ) ->
                         Decode.succeed (Video.SetVolume (min 1 (model.volume + 0.1)) model.muted)
 
                     ( _, "KeyM" ) ->

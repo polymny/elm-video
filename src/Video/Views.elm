@@ -111,17 +111,36 @@ overlay model =
         , Element.height Element.fill
         , Font.color (Element.rgb 1 1 1)
         , Font.size ((model.playerSize |> Tuple.second) // round (1.5 * toFloat scale))
+        , Element.htmlAttribute (Html.Attributes.tabindex -1)
+        , Events.overlayKey model
         ]
         (if not model.ready then
             [ Element.el [ Element.scale 5, Element.centerX, Element.centerY ] (animatedEl rotate [] (icon model Icons.spinner)) ]
 
          else if not model.hasStarted then
-            [ Element.el (Element.scale 5 :: Element.centerX :: Element.centerY :: Events.overlay model) (icon model Material.Icons.play_circle_outline) ]
+            [ Element.el
+                (Element.scale 5
+                    :: Element.centerX
+                    :: Element.centerY
+                    :: Events.overlay model
+                )
+                (icon model Material.Icons.play_circle_outline)
+            ]
 
          else
-            [ Element.el (Element.width Element.fill :: Element.height Element.fill :: Events.overlay model) Element.none
+            [ Element.el
+                (Element.width Element.fill
+                    :: Element.height Element.fill
+                    :: Events.overlay model
+                )
+                Element.none
             , Element.row [ Element.width Element.fill ]
-                [ Element.el (Element.width Element.fill :: Element.height Element.fill :: Events.overlay model) Element.none
+                [ Element.el
+                    (Element.width Element.fill
+                        :: Element.height Element.fill
+                        :: Events.overlay model
+                    )
+                    Element.none
                 , settings model
                 ]
             , controls model
@@ -257,7 +276,13 @@ buttonBar model =
         [ Element.row [ Element.alignLeft, Element.spacing 10 ]
             [ playPauseButton model
             , volumeButton model
-            , Element.el [ Element.moveDown 2.5, Element.centerY ] (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
+            , volumeBar model
+            , Element.el
+                [ Element.moveDown 2.5
+                , Element.centerY
+                , Element.paddingEach { left = 10, right = 0, top = 0, bottom = 0 }
+                ]
+                (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
             ]
         , Element.row [ Element.alignRight, Element.spacing 10 ]
             [ subtitlesButton model
@@ -559,7 +584,7 @@ playPauseButton model =
             else
                 icon model Material.Icons.play_arrow
     in
-    Input.button []
+    Input.button [ boxShadowNone ]
         { label = i
         , onPress = Just Video.PlayPause
         }
@@ -572,21 +597,48 @@ volumeButton model =
             if model.muted then
                 icon model Material.Icons.volume_off
 
-            else if model.volume < 0.5 then
+            else if model.volume < 0.3 then
+                icon model Material.Icons.volume_mute
+
+            else if model.volume < 0.6 then
                 icon model Material.Icons.volume_down
 
             else
                 icon model Material.Icons.volume_up
     in
-    Input.button []
+    Input.button [ boxShadowNone ]
         { label = i
         , onPress = Just (Video.SetVolume model.volume (not model.muted))
         }
 
 
+volumeBar : Video -> Element Video.Msg
+volumeBar model =
+    let
+        volume =
+            round (100 * model.volume)
+    in
+    Element.row [ Element.width (Element.px 100), Element.height Element.fill, Events.volumeBar ]
+        [ Element.el
+            [ Element.width (Element.fillPortion volume)
+            , Element.height (Element.px 5)
+            , Element.centerY
+            , Background.color (Element.rgb 1 1 1)
+            ]
+            Element.none
+        , Element.el
+            [ Element.width (Element.fillPortion (100 - volume))
+            , Element.height (Element.px 5)
+            , Element.centerY
+            , Background.color (Element.rgb 0.5 0.5 0.5)
+            ]
+            Element.none
+        ]
+
+
 fullscreenButton : Video -> Element Video.Msg
 fullscreenButton model =
-    Input.button []
+    Input.button [ boxShadowNone ]
         (if model.isFullscreen then
             { label = icon model Material.Icons.fullscreen_exit
             , onPress = Just Video.ExitFullscreen
@@ -601,7 +653,7 @@ fullscreenButton model =
 
 speedButton : Video -> Element Video.Msg
 speedButton model =
-    Input.button []
+    Input.button [ boxShadowNone ]
         { label = icon model Material.Icons.speed
         , onPress = Just (Video.ToggleSettings Video.Speed)
         }
@@ -610,7 +662,7 @@ speedButton model =
 subtitlesButton : Video -> Element Video.Msg
 subtitlesButton model =
     if not (List.isEmpty model.subtitles) then
-        Input.button []
+        Input.button [ boxShadowNone ]
             { label =
                 icon model
                     (if model.subtitleTrack /= Nothing then
@@ -629,7 +681,7 @@ subtitlesButton model =
 qualityButton : Video -> Element Video.Msg
 qualityButton model =
     if not (List.isEmpty model.qualities) then
-        Input.button []
+        Input.button [ boxShadowNone ]
             { label = icon model Material.Icons.settings
             , onPress = Just (Video.ToggleSettings Video.Quality)
             }
@@ -647,3 +699,8 @@ icon model i =
 scale : Int
 scale =
     15
+
+
+boxShadowNone : Element.Attr () msg
+boxShadowNone =
+    Element.htmlAttribute (Html.Attributes.style "box-shadow" "none")
