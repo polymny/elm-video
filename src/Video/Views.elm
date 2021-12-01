@@ -118,13 +118,11 @@ overlay model =
             [ Element.el [ Element.scale 5, Element.centerX, Element.centerY ] (animatedEl rotate [] (icon model Icons.spinner)) ]
 
          else if not model.hasStarted then
-            [ Element.el
-                (Element.scale 5
-                    :: Element.centerX
-                    :: Element.centerY
-                    :: Events.overlay model
+            [ Element.el (Element.width Element.fill :: Element.height Element.fill :: Background.color (Element.rgba 0 0 0 0.5) :: Events.overlay model)
+                (Element.el
+                    [ Element.scale 5, Element.centerX, Element.centerY ]
+                    (icon model Material.Icons.play_circle_outline)
                 )
-                (icon model Material.Icons.play_circle_outline)
             ]
 
          else
