@@ -1,8 +1,11 @@
 port module Video exposing
-    ( Msg(..)
+    ( FadeTimer
+    , Msg(..)
     , Settings(..)
     , SubtitleTrack
     , Video
+    , fadeTimerIcon
+    , fadeTimerOverlay
     , fromConfig
     , init
     , nowHasPlayerSize
@@ -15,6 +18,8 @@ port module Video exposing
     )
 
 import Json.Decode as Decode
+import Material.Icons
+import Material.Icons.Types exposing (Icon)
 import Video.Quality as Quality exposing (Quality)
 
 
@@ -32,6 +37,8 @@ type alias Video =
     , quality : Maybe Quality.Quality
     , qualities : List Int
     , animationFrame : Float
+    , overlayTimer : Float
+    , icon : ( Float, Icon Msg )
     , size : ( Int, Int )
     , screenSize : ( Int, Int )
     , playerSize : ( Int, Int )
@@ -68,6 +75,8 @@ fromConfig config =
       , quality = Nothing
       , qualities = []
       , animationFrame = 0
+      , overlayTimer = 0
+      , icon = ( 0, Material.Icons.play_arrow )
       , size = ( 0, 0 )
       , screenSize = ( 0, 0 )
       , playerSize = ( 0, 0 )
@@ -130,25 +139,65 @@ type Msg
     | NowHasMiniature (Maybe ( Int, Int ))
 
 
+type alias FadeTimer =
+    { fade : Float
+    , disappear : Float
+    }
+
+
+fadeTimerOverlay : FadeTimer
+fadeTimerOverlay =
+    { fade = 3000
+    , disappear = 3500
+    }
+
+
+fadeTimerIcon : FadeTimer
+fadeTimerIcon =
+    { fade = 0
+    , disappear = 500
+    }
+
+
 update : Msg -> Video -> ( Video, Cmd Msg )
 update msg model =
+    let
+        modelResetTimer =
+            { model | overlayTimer = model.animationFrame }
+    in
     case msg of
         Noop ->
             ( model, Cmd.none )
 
         PlayPause ->
-            ( model, playPause model.id )
+            let
+                icon =
+                    if model.playing then
+                        Material.Icons.pause
+
+                    else
+                        Material.Icons.play_arrow
+            in
+            ( { modelResetTimer | icon = ( model.animationFrame, icon ) }, playPause modelResetTimer.id )
 
         Seek time ->
-            ( model, seek model.id time )
+            let
+                icon =
+                    if time > model.position then
+                        Material.Icons.fast_forward
+
+                    else
+                        Material.Icons.fast_rewind
+            in
+            ( { modelResetTimer | icon = ( model.animationFrame, icon ) }, seek modelResetTimer.id time )
 
         SetPlaybackRate rate ->
-            ( model, setPlaybackRate model.id rate )
+            ( modelResetTimer, setPlaybackRate modelResetTimer.id rate )
 
         ToggleSettings s ->
             let
                 newSettings =
-                    case model.settings of
+                    case modelResetTimer.settings of
                         Nothing ->
                             Just s
 
@@ -159,22 +208,22 @@ update msg model =
                             else
                                 Just s
             in
-            ( { model | settings = newSettings, animationFrame = 0 }, Cmd.none )
+            ( { modelResetTimer | settings = newSettings, overlayTimer = modelResetTimer.animationFrame }, Cmd.none )
 
         RequestFullscreen ->
-            ( model, requestFullscreen model.id )
+            ( modelResetTimer, requestFullscreen modelResetTimer.id )
 
         ExitFullscreen ->
-            ( model, exitFullscreen model.id )
+            ( modelResetTimer, exitFullscreen modelResetTimer.id )
 
         SetQuality q ->
-            ( model, setQuality model.id q )
+            ( modelResetTimer, setQuality modelResetTimer.id q )
 
         SetSubtitleTrack t ->
-            ( model, setSubtitleTrack model.id t )
+            ( modelResetTimer, setSubtitleTrack modelResetTimer.id t )
 
         SetVolume v m ->
-            ( model, setVolume model.id { volume = v, muted = m } )
+            ( modelResetTimer, setVolume modelResetTimer.id { volume = v, muted = m } )
 
         AnimationFrameDelta delta ->
             let
@@ -182,7 +231,7 @@ update msg model =
                     model.animationFrame + delta
 
                 settings =
-                    if animationFrame > 3500 then
+                    if animationFrame - model.overlayTimer > fadeTimerOverlay.disappear then
                         Nothing
 
                     else
@@ -196,13 +245,13 @@ update msg model =
             )
 
         MouseMove ->
-            ( { model | animationFrame = 0 }, Cmd.none )
+            ( modelResetTimer, Cmd.none )
 
         NowPlaying ->
             ( { model | playing = True, hasStarted = True }, Cmd.none )
 
         NowPaused ->
-            ( { model | playing = False }, Cmd.none )
+            ( { model | playing = False, icon = ( model.animationFrame, Material.Icons.pause ) }, Cmd.none )
 
         NowHasDuration duration ->
             ( { model | duration = duration }, Cmd.none )

@@ -5,6 +5,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import Element.Keyed
 import Html
 import Html.Attributes
 import Material.Icons
@@ -106,7 +107,7 @@ menu model =
 
 overlay : Video -> Element Video.Msg
 overlay model =
-    Element.column
+    Element.el
         [ Element.width Element.fill
         , Element.height Element.fill
         , Font.color (Element.rgb 1 1 1)
@@ -115,34 +116,46 @@ overlay model =
         , Events.overlayKey model
         ]
         (if not model.ready then
-            [ Element.el [ Element.scale 5, Element.centerX, Element.centerY ] (animatedEl rotate [] (icon model Icons.spinner)) ]
+            Element.el [ Element.scale 5, Element.centerX, Element.centerY ] (animatedEl rotate [] (icon model Icons.spinner))
 
          else if not model.hasStarted then
-            [ Element.el (Element.width Element.fill :: Element.height Element.fill :: Background.color (Element.rgba 0 0 0 0.5) :: Events.overlay model)
+            Element.el (Element.width Element.fill :: Element.height Element.fill :: Background.color (Element.rgba 0 0 0 0.5) :: Events.overlay model)
                 (Element.el
                     [ Element.scale 5, Element.centerX, Element.centerY ]
                     (icon model Material.Icons.play_circle_outline)
                 )
-            ]
 
          else
-            [ Element.el
-                (Element.width Element.fill
-                    :: Element.height Element.fill
-                    :: Events.overlay model
-                )
-                Element.none
-            , Element.row [ Element.width Element.fill ]
+            Element.column
+                [ Element.width Element.fill
+                , Element.height Element.fill
+                , Element.inFront
+                    (Element.Keyed.el [ Element.centerX, Element.centerY, pointerEventsNone ]
+                        ( String.fromFloat (Tuple.first model.icon)
+                        , fadeOutZoomElement Video.fadeTimerIcon
+                            (model.animationFrame - Tuple.first model.icon)
+                            []
+                            (Tuple.second model.icon |> circledIcon model)
+                        )
+                    )
+                ]
                 [ Element.el
                     (Element.width Element.fill
                         :: Element.height Element.fill
                         :: Events.overlay model
                     )
                     Element.none
-                , settings model
+                , Element.row [ Element.width Element.fill ]
+                    [ Element.el
+                        (Element.width Element.fill
+                            :: Element.height Element.fill
+                            :: Events.overlay model
+                        )
+                        Element.none
+                    , settings model
+                    ]
+                , controls model
                 ]
-            , controls model
-            ]
         )
 
 
@@ -239,9 +252,8 @@ settings model =
                             in
                             ( "Subtitles", options, Element.alignRight )
             in
-            fadeElement 3000
-                3500
-                model.animationFrame
+            fadeElement Video.fadeTimerOverlay
+                (model.animationFrame - model.overlayTimer)
                 [ Element.padding 20, size ]
                 (Element.column
                     [ Element.width Element.fill
@@ -257,10 +269,8 @@ settings model =
 
 controls : Video -> Element Video.Msg
 controls model =
-    fadeElement
-        3000
-        3500
-        model.animationFrame
+    fadeElement Video.fadeTimerOverlay
+        (model.animationFrame - model.overlayTimer)
         [ Element.width Element.fill
         , Element.padding 10
         , Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
@@ -510,7 +520,7 @@ fadeOut =
         , options = []
         }
         [ P.opacity 1 ]
-        [ P.opacity 0, P.property "display" "none" ]
+        [ P.opacity 0 ]
 
 
 fadeOutZoom : Animation
@@ -555,14 +565,14 @@ hideCursor =
     Element.htmlAttribute (Html.Attributes.style "cursor" "none")
 
 
-fadeElement : Float -> Float -> Float -> List (Element.Attribute msg) -> Element msg -> Element msg
-fadeElement start end current attr el =
-    if current > end then
+fadeElement : Video.FadeTimer -> Float -> List (Element.Attribute msg) -> Element msg -> Element msg
+fadeElement fadeTimer current attr el =
+    if current > fadeTimer.disappear then
         Element.none
 
     else
         animatedEl
-            (if current > start then
+            (if current > fadeTimer.fade then
                 fadeOut
 
              else
@@ -570,6 +580,15 @@ fadeElement start end current attr el =
             )
             attr
             el
+
+
+fadeOutZoomElement : Video.FadeTimer -> Float -> List (Element.Attribute msg) -> Element msg -> Element msg
+fadeOutZoomElement fadeTimer current attr el =
+    if current > fadeTimer.disappear then
+        Element.none
+
+    else
+        animatedEl fadeOutZoom attr el
 
 
 playPauseButton : Video -> Element Video.Msg
@@ -694,6 +713,12 @@ icon model i =
         (Icons.icon ((model.playerSize |> Tuple.second) // scale) i)
 
 
+circledIcon : Video -> Icon msg -> Element msg
+circledIcon model i =
+    Element.el [ Element.padding ((model.playerSize |> Tuple.second) // (scale * 4)), Background.color (Element.rgb 0 0 0), Border.rounded 10000 ]
+        (Icons.icon ((model.playerSize |> Tuple.second) // scale) i)
+
+
 scale : Int
 scale =
     15
@@ -702,3 +727,8 @@ scale =
 boxShadowNone : Element.Attr () msg
 boxShadowNone =
     Element.htmlAttribute (Html.Attributes.style "box-shadow" "none")
+
+
+pointerEventsNone : Element.Attr () msg
+pointerEventsNone =
+    Element.htmlAttribute (Html.Attributes.style "pointer-events" "none")
