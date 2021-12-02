@@ -635,7 +635,7 @@ volumeBar model =
         volume =
             round (100 * model.volume)
     in
-    Element.row [ Element.width (Element.px 100), Element.height Element.fill, Events.volumeBar ]
+    Element.row [ Element.width (Element.px 100), Element.height Element.fill, Element.pointer, Events.volumeBar ]
         [ Element.el
             [ Element.width (Element.fillPortion volume)
             , Element.height (Element.px 5)
