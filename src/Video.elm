@@ -184,14 +184,17 @@ update msg model =
 
         Seek time ->
             let
-                icon =
+                i =
                     if time > model.position then
-                        Material.Icons.fast_forward
+                        ( model.animationFrame, Material.Icons.fast_forward )
+
+                    else if time < model.position then
+                        ( model.animationFrame, Material.Icons.fast_rewind )
 
                     else
-                        Material.Icons.fast_rewind
+                        model.icon
             in
-            ( { modelResetTimer | icon = ( model.animationFrame, icon ) }, seek modelResetTimer.id time )
+            ( { modelResetTimer | icon = i }, seek modelResetTimer.id time )
 
         SetPlaybackRate rate ->
             ( modelResetTimer, setPlaybackRate modelResetTimer.id rate )
@@ -225,7 +228,24 @@ update msg model =
             ( modelResetTimer, setSubtitleTrack modelResetTimer.id t )
 
         SetVolume v m ->
-            ( modelResetTimer, setVolume modelResetTimer.id { volume = v, muted = m } )
+            let
+                i =
+                    if m && not model.muted then
+                        ( model.animationFrame, Material.Icons.volume_off )
+
+                    else if not m && model.muted then
+                        ( model.animationFrame, Material.Icons.volume_up )
+
+                    else if model.volume > v then
+                        ( model.animationFrame, Material.Icons.volume_down )
+
+                    else if model.volume < v then
+                        ( model.animationFrame, Material.Icons.volume_up )
+
+                    else
+                        model.icon
+            in
+            ( { modelResetTimer | icon = i }, setVolume modelResetTimer.id { volume = v, muted = m } )
 
         AnimationFrameDelta delta ->
             let

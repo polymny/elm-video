@@ -81,7 +81,10 @@ overlay model =
 
 overlayKey : Video -> Element.Attribute Video.Msg
 overlayKey model =
-    Element.htmlAttribute (Html.Events.on "keydown" (decodeKeyDown True model))
+    decodeKeyDown True model
+        |> Decode.map (\x -> ( x, True ))
+        |> Html.Events.preventDefaultOn "keydown"
+        |> Element.htmlAttribute
 
 
 seekBar : Video -> List (Element.Attribute Video.Msg)
