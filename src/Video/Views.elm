@@ -167,10 +167,10 @@ settings model =
                                 playbackRateOption x =
                                     Input.button
                                         (if x == model.playbackRate then
-                                            [ Element.width Element.fill, Font.bold ]
+                                            [ Element.width Element.fill, Font.bold, boxShadowNone ]
 
                                          else
-                                            [ Element.width Element.fill ]
+                                            [ Element.width Element.fill, boxShadowNone ]
                                         )
                                         { label =
                                             Element.column [ Element.width Element.fill ]
@@ -198,7 +198,7 @@ settings model =
                             let
                                 qualityOption : Int -> Element Video.Msg
                                 qualityOption x =
-                                    Input.button []
+                                    Input.button [ boxShadowNone ]
                                         { label =
                                             Element.row []
                                                 [ if Quality.isSameOption (Just { auto = False, height = x }) model.quality then
@@ -222,7 +222,7 @@ settings model =
                             let
                                 subtitlesOption : ( Int, Maybe Video.SubtitleTrack ) -> Element Video.Msg
                                 subtitlesOption ( id, track ) =
-                                    Input.button []
+                                    Input.button [ boxShadowNone ]
                                         { label =
                                             Element.row []
                                                 [ if track == model.subtitleTrack then
