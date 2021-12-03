@@ -4,6 +4,7 @@ port module Video exposing
     , Settings(..)
     , SubtitleTrack
     , Video
+    , autoplayRefused
     , fadeTimerIcon
     , fadeTimerOverlay
     , fromConfig
@@ -137,6 +138,7 @@ type Msg
     | NowHasSubtitles (List SubtitleTrack)
     | NowHasSubtitleTrack (Maybe SubtitleTrack)
     | NowHasMiniature (Maybe ( Int, Int ))
+    | AutoplayRefused
 
 
 type alias FadeTimer =
@@ -251,7 +253,7 @@ update msg model =
             ( { model | playing = True, hasStarted = True }, Cmd.none )
 
         NowPaused ->
-            ( { model | playing = False, icon = ( model.animationFrame, Material.Icons.pause ) }, Cmd.none )
+            ( { model | playing = False }, Cmd.none )
 
         NowHasDuration duration ->
             ( { model | duration = duration }, Cmd.none )
@@ -294,6 +296,9 @@ update msg model =
 
         NowHasMiniature miniature ->
             ( { model | showMiniature = miniature }, Cmd.none )
+
+        AutoplayRefused ->
+            ( { model | hasStarted = False }, Cmd.none )
 
 
 port polymnyVideoInit : ( String, String, Bool ) -> Cmd msg
@@ -414,3 +419,11 @@ port polymnyVideoNowHasPlayerSize : (( Int, Int ) -> msg) -> Sub msg
 nowHasPlayerSize : (( Int, Int ) -> msg) -> Sub msg
 nowHasPlayerSize =
     polymnyVideoNowHasPlayerSize
+
+
+port polymnyVideoAutoplayRefused : (() -> msg) -> Sub msg
+
+
+autoplayRefused : msg -> Sub msg
+autoplayRefused msg =
+    polymnyVideoAutoplayRefused (\_ -> msg)

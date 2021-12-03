@@ -8,9 +8,9 @@ Object.defineProperty(TimeRanges.prototype, "polymnyVideoAsArray", {
     }
 });
 
-Object.defineProperty(HTMLElement.prototype, "polymnyVideoDocument", {
+Object.defineProperty(HTMLElement.prototype, "polymnyVideoFullscreenElement", {
     get: function() {
-        return document;
+        return document.fullscreenElement || document.webkitFullscreenElement || null;
     }
 });
 
@@ -35,7 +35,7 @@ const PolymnyVideo = (function() {
                 throw new Error("options.url must be a string");
             }
 
-            options.id = "polmynyVideoId" + PolymnyVideo.idCounter++;
+            options.id = "polymnyVideoId" + PolymnyVideo.idCounter++;
             options.mobile = isDeviceMobile();
 
             const app = construct({
@@ -65,10 +65,11 @@ const PolymnyVideo = (function() {
         app.ports.polymnyVideoInit.subscribe(function(arg) {
             requestAnimationFrame(function() {
                 const video = document.getElementById(arg[0]);
-                app.ports.polymnyVideoNowHasPlayerSize.send([video.offsetWidth, video.offsetHeight]);
-                window.addEventListener('resize', () => {
+
+                let resizeObserver = new ResizeObserver(_ => {
                     app.ports.polymnyVideoNowHasPlayerSize.send([video.offsetWidth, video.offsetHeight]);
                 });
+                resizeObserver.observe(video);
 
                 if (Hls.isSupported()) {
                     hls = new Hls();
@@ -102,7 +103,10 @@ const PolymnyVideo = (function() {
                 }
 
                 if (arg[2]) {
-                    video.play();
+                    let promise = video.play();
+                    if (promise !== undefined) {
+                        promise.catch(() => requestAnimationFrame(() => app.ports.polymnyVideoAutoplayRefused.send(null)));
+                    }
                 }
             });
         });
@@ -122,11 +126,20 @@ const PolymnyVideo = (function() {
         });
 
         app.ports.polymnyVideoRequestFullscreen.subscribe(function(arg) {
-            document.getElementById(arg + '-full').requestFullscreen();
+            let element = document.getElementById(arg + '-full');
+            if (typeof element.requestFullscreen === 'function') {
+                element.requestFullscreen();
+            } else if (typeof element.webkitRequestFullscreen === 'function') {
+                element.webkitRequestFullscreen();
+            }
         });
 
         app.ports.polymnyVideoExitFullscreen.subscribe(function(arg) {
-            document.exitFullscreen();
+            if (typeof document.exitFullscreen === 'function') {
+                document.exitFullscreen();
+            } else if (typeof document.webkitExitFullscreen === 'function') {
+                document.webkitExitFullscreen();
+            }
         });
 
         app.ports.polymnyVideoSetPlaybackRate.subscribe(function(arg) {

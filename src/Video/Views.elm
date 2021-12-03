@@ -24,7 +24,6 @@ view model =
     Element.el
         (Element.inFront (overlay model)
             :: Element.width Element.fill
-            :: Element.inFront (menu model)
             :: Background.color (Element.rgb 0 0 0)
             :: Element.htmlAttribute (Html.Attributes.id (model.id ++ "-full"))
             :: Events.player
@@ -40,7 +39,6 @@ embed model =
     else
         Element.el
             (Element.inFront (overlay model)
-                :: Element.inFront (menu model)
                 :: Element.width Element.fill
                 :: Background.color (Element.rgb 0 0 0)
                 :: Element.htmlAttribute (Html.Attributes.id (model.id ++ "-full"))
@@ -78,8 +76,7 @@ fullpage model =
                 )
     in
     Element.el
-        (Element.inFront (overlay model)
-            :: Element.inFront (menu model)
+        (Element.inFront (overlay { model | playerSize = model.size })
             :: Element.width Element.fill
             :: Element.height Element.fill
             :: Background.color (Element.rgb 0 0 0)
@@ -98,11 +95,6 @@ fullpage model =
                 []
             )
         )
-
-
-menu : Video -> Element msg
-menu model =
-    Element.none
 
 
 overlay : Video -> Element Video.Msg

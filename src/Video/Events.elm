@@ -43,6 +43,7 @@ subs model =
             )
         , Video.nowHasScreenSize Video.NowHasScreenSize
         , Video.nowHasPlayerSize Video.NowHasPlayerSize
+        , Video.autoplayRefused Video.AutoplayRefused
         , Browser.Events.onResize (\x y -> Video.NowHasScreenSize ( x, y ))
         , Browser.Events.onAnimationFrameDelta Video.AnimationFrameDelta
         , Browser.Events.onKeyDown (decodeKeyDown False model)
@@ -53,6 +54,7 @@ player : List (Element.Attribute Video.Msg)
 player =
     List.map Element.htmlAttribute
         [ Html.Events.on "fullscreenchange" decodeFullscreenChange
+        , Html.Events.on "webkitfullscreenchange" decodeFullscreenChange
         , Html.Events.on "mousemove" (Decode.succeed Video.MouseMove)
         ]
 
@@ -158,8 +160,7 @@ decodeFullscreenChange : Decode.Decoder Video.Msg
 decodeFullscreenChange =
     Decode.value
         |> Decode.nullable
-        |> Decode.field "fullscreenElement"
-        |> Decode.field "polymnyVideoDocument"
+        |> Decode.field "polymnyVideoFullscreenElement"
         |> Decode.field "target"
         |> Decode.map (\x -> Video.NowIsFullscreen (x /= Nothing))
 
