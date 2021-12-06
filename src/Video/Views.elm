@@ -76,7 +76,7 @@ fullpage model =
                 )
     in
     Element.el
-        (Element.inFront (overlay { model | playerSize = model.size })
+        (Element.inFront (overlay { model | playerSize = model.screenSize })
             :: Element.width Element.fill
             :: Element.height Element.fill
             :: Background.color (Element.rgb 0 0 0)
@@ -99,11 +99,15 @@ fullpage model =
 
 overlay : Video -> Element Video.Msg
 overlay model =
+    let
+        size =
+            min (Tuple.first model.playerSize * 9 // 16) (Tuple.second model.playerSize)
+    in
     Element.el
         [ Element.width Element.fill
         , Element.height Element.fill
         , Font.color (Element.rgb 1 1 1)
-        , Font.size ((model.playerSize |> Tuple.second) // round (1.5 * toFloat scale))
+        , Font.size (size // round (1.5 * toFloat scale))
         , Element.htmlAttribute (Html.Attributes.tabindex -1)
         , Events.overlayKey model
         ]
@@ -111,14 +115,14 @@ overlay model =
             Element.el [ Element.scale 5, Element.centerX, Element.centerY ] (animatedEl rotate [] (icon model Icons.spinner))
 
          else if not model.hasStarted then
-            Element.el (Element.width Element.fill :: Element.height Element.fill :: Background.color (Element.rgba 0 0 0 0.5) :: Events.overlay model)
+            Element.el [ Element.width Element.fill, Element.height Element.fill, Background.color (Element.rgba 0 0 0 0.25), Events.startOverlay ]
                 (Element.el
                     [ Element.scale 5, Element.centerX, Element.centerY ]
                     (icon model Material.Icons.play_circle_outline)
                 )
 
          else
-            Element.column
+            Element.el
                 [ Element.width Element.fill
                 , Element.height Element.fill
                 , Element.inFront
@@ -130,24 +134,31 @@ overlay model =
                             (Tuple.second model.icon |> circledIcon model)
                         )
                     )
-                ]
-                [ Element.el
-                    (Element.width Element.fill
-                        :: Element.height Element.fill
-                        :: Events.overlay model
-                    )
-                    Element.none
-                , Element.row [ Element.width Element.fill ]
-                    [ Element.el
+                , Element.behindContent
+                    (Element.el
                         (Element.width Element.fill
                             :: Element.height Element.fill
                             :: Events.overlay model
                         )
-                        Element.none
-                    , settings model
-                    ]
-                , controls model
+                        (mobileOverlay model)
+                    )
+                , pointerEventsNone
+                , Element.inFront
+                    (Element.column [ Element.width Element.fill, Element.alignBottom ]
+                        [ Element.row [ Element.width Element.fill ]
+                            [ Element.el
+                                (Element.width Element.fill
+                                    :: Element.height Element.fill
+                                    :: Events.overlay model
+                                )
+                                Element.none
+                            , settings model
+                            ]
+                        , controls model
+                        ]
+                    )
                 ]
+                Element.none
         )
 
 
@@ -265,7 +276,11 @@ controls model =
         (model.animationFrame - model.overlayTimer)
         [ Element.width Element.fill
         , Element.padding 10
-        , Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
+        , if Video.isMobile model then
+            Background.color (Element.rgba 0 0 0 0)
+
+          else
+            Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
         ]
         (Element.column [ Element.width Element.fill ] [ seekbar model, buttonBar model ])
 
@@ -375,7 +390,7 @@ seekbar model =
 
 miniature : Video -> Element Video.Msg
 miniature model =
-    case ( model.mobile, model.showMiniature ) of
+    case ( Video.isMobile model, model.showMiniature ) of
         ( False, Just ( position, size ) ) ->
             let
                 relativePosition =
@@ -436,6 +451,24 @@ miniature model =
 
         _ ->
             Element.none
+
+
+mobileOverlay : Video -> Element Video.Msg
+mobileOverlay model =
+    if Video.isMobile model then
+        fadeElement Video.fadeTimerOverlay
+            (model.animationFrame - model.overlayTimer)
+            [ Element.width Element.fill, Element.height Element.fill ]
+            (Element.row
+                [ Background.color (Element.rgba 0 0 0 0.5), Element.width Element.fill, Element.height Element.fill ]
+                [ Element.el [ Element.width Element.fill, Element.centerY ] (Element.el [ Element.centerX, Element.scale 2 ] (rewindButton model))
+                , Element.el [ Element.width Element.fill, Element.centerY ] (Element.el [ Element.centerX, Element.scale 4 ] (playPauseButton model))
+                , Element.el [ Element.width Element.fill, Element.centerY ] (Element.el [ Element.centerX, Element.scale 2 ] (fastForwardButton model))
+                ]
+            )
+
+    else
+        Element.none
 
 
 every : Float -> List ( Float, Float ) -> List ( Float, Float, Bool )
@@ -599,6 +632,22 @@ playPauseButton model =
         }
 
 
+rewindButton : Video -> Element Video.Msg
+rewindButton model =
+    Input.button [ boxShadowNone ]
+        { label = icon model Material.Icons.fast_rewind
+        , onPress = Just (Video.Seek (model.position - 10))
+        }
+
+
+fastForwardButton : Video -> Element Video.Msg
+fastForwardButton model =
+    Input.button [ boxShadowNone ]
+        { label = icon model Material.Icons.fast_forward
+        , onPress = Just (Video.Seek (model.position + 10))
+        }
+
+
 volumeButton : Video -> Element Video.Msg
 volumeButton model =
     let
@@ -701,14 +750,22 @@ qualityButton model =
 
 icon : Video -> Icon msg -> Element msg
 icon model i =
-    Element.el [ Element.padding ((model.playerSize |> Tuple.second) // (scale * 4)) ]
-        (Icons.icon ((model.playerSize |> Tuple.second) // scale) i)
+    let
+        size =
+            min (Tuple.first model.playerSize * 9 // 16) (Tuple.second model.playerSize)
+    in
+    Element.el [ Element.padding (size // (scale * 4)) ]
+        (Icons.icon (size // scale) i)
 
 
 circledIcon : Video -> Icon msg -> Element msg
 circledIcon model i =
-    Element.el [ Element.padding ((model.playerSize |> Tuple.second) // (scale * 4)), Background.color (Element.rgb 0 0 0), Border.rounded 10000 ]
-        (Icons.icon ((model.playerSize |> Tuple.second) // scale) i)
+    let
+        size =
+            min (Tuple.first model.playerSize * 9 // 16) (Tuple.second model.playerSize)
+    in
+    Element.el [ Element.padding (size // (scale * 4)), Background.color (Element.rgb 0 0 0), Border.rounded 10000 ]
+        (Icons.icon (size // scale) i)
 
 
 scale : Int

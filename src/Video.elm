@@ -9,6 +9,7 @@ port module Video exposing
     , fadeTimerOverlay
     , fromConfig
     , init
+    , isMobile
     , nowHasPlayerSize
     , nowHasQualities
     , nowHasQuality
@@ -18,6 +19,7 @@ port module Video exposing
     , update
     )
 
+import Element
 import Json.Decode as Decode
 import Material.Icons
 import Material.Icons.Types exposing (Icon)
@@ -48,7 +50,6 @@ type alias Video =
     , subtitles : List SubtitleTrack
     , subtitleTrack : Maybe SubtitleTrack
     , showMiniature : Maybe ( Int, Int )
-    , mobile : Bool
     , ready : Bool
     }
 
@@ -86,11 +87,26 @@ fromConfig config =
       , subtitles = []
       , subtitleTrack = Nothing
       , showMiniature = Nothing
-      , mobile = config.mobile
       , ready = False
       }
     , init config.id config.url config.autoplay
     )
+
+
+isMobile : Video -> Bool
+isMobile model =
+    case (Element.classifyDevice { width = Tuple.first model.screenSize, height = Tuple.second model.screenSize }).class of
+        Element.Phone ->
+            True
+
+        Element.Tablet ->
+            True
+
+        Element.Desktop ->
+            False
+
+        Element.BigDesktop ->
+            False
 
 
 type Settings
@@ -111,6 +127,7 @@ type alias SubtitleTrack =
 
 type Msg
     = Noop
+    | ResetTimer
     | PlayPause
     | Seek Float
     | ToggleSettings Settings
@@ -171,6 +188,9 @@ update msg model =
         Noop ->
             ( model, Cmd.none )
 
+        ResetTimer ->
+            ( modelResetTimer, Cmd.none )
+
         PlayPause ->
             let
                 icon =
@@ -182,8 +202,11 @@ update msg model =
             in
             ( { modelResetTimer | icon = ( model.animationFrame, icon ) }, playPause modelResetTimer.id )
 
-        Seek time ->
+        Seek t ->
             let
+                time =
+                    max (min t model.duration) 0
+
                 i =
                     if time > model.position then
                         ( model.animationFrame, Material.Icons.fast_forward )

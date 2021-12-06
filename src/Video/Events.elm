@@ -1,4 +1,4 @@
-module Video.Events exposing (overlay, overlayKey, player, seekBar, subs, video, volumeBar)
+module Video.Events exposing (overlay, overlayKey, player, seekBar, startOverlay, subs, video, volumeBar)
 
 import Browser.Events
 import Element
@@ -73,10 +73,19 @@ video model =
     ]
 
 
+startOverlay : Element.Attribute Video.Msg
+startOverlay =
+    Element.htmlAttribute (Html.Events.on "click" (Decode.succeed Video.PlayPause))
+
+
 overlay : Video -> List (Element.Attribute Video.Msg)
 overlay model =
-    [ Element.htmlAttribute (Html.Events.on "click" (Decode.succeed Video.PlayPause))
-    ]
+    if Video.isMobile model then
+        [ Element.htmlAttribute (Html.Events.on "click" (Decode.succeed Video.ResetTimer)) ]
+
+    else
+        [ Element.htmlAttribute (Html.Events.on "click" (Decode.succeed Video.PlayPause))
+        ]
 
 
 overlayKey : Video -> Element.Attribute Video.Msg
