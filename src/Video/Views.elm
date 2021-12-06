@@ -276,7 +276,7 @@ controls model =
         (model.animationFrame - model.overlayTimer)
         [ Element.width Element.fill
         , Element.padding 10
-        , if Video.isMobile model then
+        , if model.mobile then
             Background.color (Element.rgba 0 0 0 0)
 
           else
@@ -390,7 +390,7 @@ seekbar model =
 
 miniature : Video -> Element Video.Msg
 miniature model =
-    case ( Video.isMobile model, model.showMiniature ) of
+    case ( model.mobile, model.showMiniature ) of
         ( False, Just ( position, size ) ) ->
             let
                 relativePosition =
@@ -455,7 +455,7 @@ miniature model =
 
 mobileOverlay : Video -> Element Video.Msg
 mobileOverlay model =
-    if Video.isMobile model then
+    if model.mobile then
         fadeElement Video.fadeTimerOverlay
             (model.animationFrame - model.overlayTimer)
             [ Element.width Element.fill, Element.height Element.fill ]
@@ -738,7 +738,7 @@ subtitlesButton model =
 
 qualityButton : Video -> Element Video.Msg
 qualityButton model =
-    if not (List.isEmpty model.qualities) then
+    if List.length model.qualities > 1 then
         Input.button [ boxShadowNone ]
             { label = icon model Material.Icons.settings
             , onPress = Just (Video.ToggleSettings Video.Quality)

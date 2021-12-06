@@ -80,7 +80,7 @@ startOverlay =
 
 overlay : Video -> List (Element.Attribute Video.Msg)
 overlay model =
-    if Video.isMobile model then
+    if model.mobile then
         [ Element.htmlAttribute (Html.Events.on "click" (Decode.succeed Video.ResetTimer)) ]
 
     else

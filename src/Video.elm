@@ -9,7 +9,6 @@ port module Video exposing
     , fadeTimerOverlay
     , fromConfig
     , init
-    , isMobile
     , nowHasPlayerSize
     , nowHasQualities
     , nowHasQuality
@@ -51,6 +50,7 @@ type alias Video =
     , subtitleTrack : Maybe SubtitleTrack
     , showMiniature : Maybe ( Int, Int )
     , ready : Bool
+    , mobile : Bool
     }
 
 
@@ -88,25 +88,10 @@ fromConfig config =
       , subtitleTrack = Nothing
       , showMiniature = Nothing
       , ready = False
+      , mobile = config.mobile
       }
     , init config.id config.url config.autoplay
     )
-
-
-isMobile : Video -> Bool
-isMobile model =
-    case (Element.classifyDevice { width = Tuple.first model.screenSize, height = Tuple.second model.screenSize }).class of
-        Element.Phone ->
-            True
-
-        Element.Tablet ->
-            True
-
-        Element.Desktop ->
-            False
-
-        Element.BigDesktop ->
-            False
 
 
 type Settings

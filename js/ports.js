@@ -100,6 +100,10 @@ const PolymnyVideo = (function() {
                     hls.attachMedia(video);
                 } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                     video.src = arg[1];
+
+                    video.addEventListener('canplay', () => {
+                        app.ports.polymnyVideoNowHasQualities.send([0]);
+                    });
                 }
 
                 if (arg[2]) {
