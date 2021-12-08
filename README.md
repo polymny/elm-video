@@ -1,10 +1,9 @@
-# elm-video
-
 *Yet another video player in Elm*
 
-For the moment, this package only supports HLS videos. See
-[polymny/hls](https://github.com/polymny/hls) if you want to encode your videos
-in the HLS format.
+This video player is optimized for HLS encoded video (if you want to encode
+your videos in HLS format, [check out our HLS video
+encoder](https://github.com/polymny/hls)). However, is also works correctly for
+any video format that is supported by your browser.
 
 ## Usage without elm
 
@@ -36,7 +35,8 @@ Here is an example page ([see demo](https://polymny.github.io/elm-video/full-pag
                 node: document.getElementById("container"),
                 url: "video/manifest.m3u8",
                 autoplay: true,
-                startTime: PolymnyVideo.getArgumentFromUrl("t")
+                startTime: PolymnyVideo.getArgumentFromUrl("t"),
+                enableMiniatures: true,
             });
         </script>
     </body>
@@ -74,15 +74,26 @@ demo](https://polymny.github.io/elm-video/embed.html)):
         <script src="/dist/polymny-video-full.min.js"></script>
         <script>
             PolymnyVideo.embed({
-                node: document.getElementById("node"),
+                node: document.getElementById("container"),
                 url: "video/manifest.m3u8",
                 autoplay: true,
-                startTime: PolymnyVideo.getArgumentFromUrl("t")
+                startTime: PolymnyVideo.getArgumentFromUrl("t"),
+                enableMiniatures: true,
             });
         </script>
     </body>
 </html>
 ```
+
+### Options
+
+|Attribute name|Type|Decription|
+|:--|:--|:--|
+|node|HTMLElement|The html element to which the app should bind|
+|url|string|The url of the video|
+|autoplay|bool|Whether the player should try to start when loaded|
+|startTime|float \| string| A string that represents time or a float in seconds|
+|enableMiniatures|bool|Whether the player should display miniatures on mouse hover (the miniatures are generated with [our HLS encoder](https://github.com/polymny/hls))|
 
 ## Usage with elm
 
