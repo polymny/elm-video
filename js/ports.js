@@ -72,8 +72,7 @@ const PolymnyVideo = (function() {
 
     function initHls(arg, app, video) {
         if (Hls.isSupported()) {
-            hls = new Hls();
-            window.hls = hls;
+            let hls = new Hls();
             hls.loadSource(arg.url);
 
             hls.on(Hls.Events.MANIFEST_PARSED, function() {
