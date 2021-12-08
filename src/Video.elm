@@ -394,7 +394,7 @@ parseTime time =
                     String.split "h" time
 
                 ( hours, restH ) =
-                    case splitH of
+                    case Debug.log "splitH" splitH of
                         [ rest ] ->
                             ( Just 0, rest )
 
@@ -412,6 +412,9 @@ parseTime time =
                         [ rest ] ->
                             if String.contains "s" rest then
                                 ( Just 0, rest )
+
+                            else if rest == "" then
+                                ( Just 0, "" )
 
                             else
                                 ( String.toFloat rest, "" )
