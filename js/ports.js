@@ -54,24 +54,24 @@ const PolymnyVideo = (function() {
             window.hls = hls;
             hls.loadSource(arg[1]);
 
-            hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
+            hls.on(Hls.Events.MANIFEST_PARSED, function() {
                 const availableQualities = hls.levels.map((l) => l.height);
                 availableQualities.unshift(0);
                 app.ports.polymnyVideoNowHasQualities.send(availableQualities);
             });
 
-            hls.on(Hls.Events.LEVEL_SWITCHED, function(event, data) {
+            hls.on(Hls.Events.LEVEL_SWITCHED, function(_, data) {
                 app.ports.polymnyVideoNowHasQuality.send({
                     auto: hls.autoLevelEnabled,
                     height: hls.levels[data.level].height
                 });
             })
 
-            hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, function(event, data) {
+            hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, function(_, data) {
                 app.ports.polymnyVideoNowHasSubtitles.send(data.subtitleTracks);
             });
 
-            hls.on(Hls.Events.SUBTITLE_TRACK_SWITCH, function(event, data) {
+            hls.on(Hls.Events.SUBTITLE_TRACK_SWITCH, function(_, data) {
                 app.ports.polymnyVideoNowHasSubtitleTrack.send(data.id === -1 ? null : hls.subtitleTracks[data.id]);
             });
 
@@ -151,7 +151,7 @@ const PolymnyVideo = (function() {
             }
         });
 
-        app.ports.polymnyVideoExitFullscreen.subscribe(function(arg) {
+        app.ports.polymnyVideoExitFullscreen.subscribe(function() {
             if (typeof document.exitFullscreen === 'function') {
                 document.exitFullscreen();
             } else if (typeof document.webkitExitFullscreen === 'function') {
