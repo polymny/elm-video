@@ -98,6 +98,7 @@ const PolymnyVideo = (function() {
             });
 
             hls.attachMedia(video);
+            return hls;
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             initVideo(arg, video);
         }
@@ -136,7 +137,7 @@ const PolymnyVideo = (function() {
                 resizeObserver.observe(video);
 
                 if (arg.url.endsWith('.m3u8')) {
-                    initHls(arg, app, video);
+                    hls = initHls(arg, app, video);
                 } else {
                     initVideo(arg, app, video);
                 }
