@@ -1,4 +1,4 @@
-module Video.Views exposing (..)
+module Video.Views exposing (embed, embedElement, fullpage, fullpageElement)
 
 import Element exposing (Element)
 import Element.Background as Background
@@ -19,22 +19,15 @@ import Video.Icons as Icons
 import Video.Quality as Quality
 
 
-view : Video -> Element Video.Msg
-view model =
-    Element.el
-        (Element.inFront (overlay model)
-            :: Element.width Element.fill
-            :: Background.color (Element.rgb 0 0 0)
-            :: Element.htmlAttribute (Html.Attributes.id (model.id ++ "-full"))
-            :: Events.player
-        )
-        (Element.html (Html.video (Html.Attributes.class "wf" :: Events.video model) []))
-
-
-embed : Video -> Element Video.Msg
+embed : Video -> Html.Html Video.Msg
 embed model =
+    Element.layout [] (embedElement model)
+
+
+embedElement : Video -> Element Video.Msg
+embedElement model =
     if model.isFullscreen then
-        fullpage model
+        fullpageElement model
 
     else
         Element.el
@@ -47,8 +40,13 @@ embed model =
             (Element.html (Html.video (Html.Attributes.class "wf" :: Events.video model) []))
 
 
-fullpage : Video -> Element Video.Msg
+fullpage : Video -> Html.Html Video.Msg
 fullpage model =
+    Element.layout [] (fullpageElement model)
+
+
+fullpageElement : Video -> Element Video.Msg
+fullpageElement model =
     let
         videoAspectRatio =
             toFloat (Tuple.first model.size) / toFloat (Tuple.second model.size)
@@ -390,8 +388,8 @@ seekbar model =
 
 miniature : Video -> Element Video.Msg
 miniature model =
-    case ( model.mobile, model.showMiniature ) of
-        ( False, Just ( position, size ) ) ->
+    case ( model.enableMiniatures, model.mobile, model.showMiniature ) of
+        ( True, False, Just ( position, size ) ) ->
             let
                 relativePosition =
                     toFloat position / toFloat size

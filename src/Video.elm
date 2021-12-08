@@ -8,6 +8,7 @@ port module Video exposing
     , fadeTimerIcon
     , fadeTimerOverlay
     , fromConfig
+    , fromValue
     , init
     , nowHasPlayerSize
     , nowHasQualities
@@ -51,6 +52,7 @@ type alias Video =
     , showMiniature : Maybe ( Int, Int )
     , ready : Bool
     , mobile : Bool
+    , enableMiniatures : Bool
     }
 
 
@@ -59,6 +61,7 @@ type alias Config =
     , id : String
     , autoplay : Bool
     , mobile : Bool
+    , enableMiniatures : Bool
     }
 
 
@@ -89,9 +92,36 @@ fromConfig config =
       , showMiniature = Nothing
       , ready = False
       , mobile = config.mobile
+      , enableMiniatures = config.enableMiniatures
       }
     , init config.id config.url config.autoplay
     )
+
+
+fromValue : Decode.Value -> ( Video, Cmd Msg )
+fromValue flags =
+    let
+        id =
+            Decode.decodeValue (Decode.field "id" Decode.string) flags
+                |> Result.withDefault "polymnyVideo"
+
+        url =
+            Decode.decodeValue (Decode.field "url" Decode.string) flags
+                |> Result.withDefault "manifest.m3u8"
+
+        mobile =
+            Decode.decodeValue (Decode.field "mobile" Decode.bool) flags
+                |> Result.withDefault False
+
+        autoplay =
+            Decode.decodeValue (Decode.field "autoplay" Decode.bool) flags
+                |> Result.withDefault False
+
+        enableMiniatures =
+            Decode.decodeValue (Decode.field "enableMiniatures" Decode.bool) flags
+                |> Result.withDefault (String.endsWith ".m3u8" url)
+    in
+    fromConfig { url = url, id = id, autoplay = autoplay, mobile = mobile, enableMiniatures = enableMiniatures }
 
 
 type Settings
