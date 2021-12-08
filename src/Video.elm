@@ -53,6 +53,7 @@ type alias Video =
     , ready : Bool
     , mobile : Bool
     , enableMiniatures : Bool
+    , startTime : Maybe Float
     }
 
 
@@ -62,11 +63,16 @@ type alias Config =
     , autoplay : Bool
     , mobile : Bool
     , enableMiniatures : Bool
+    , startTime : Maybe String
     }
 
 
 fromConfig : Config -> ( Video, Cmd Msg )
 fromConfig config =
+    let
+        startTime =
+            config.startTime |> Maybe.andThen parseTime
+    in
     ( { hasStarted = False
       , url = config.url
       , id = config.id
@@ -93,8 +99,14 @@ fromConfig config =
       , ready = False
       , mobile = config.mobile
       , enableMiniatures = config.enableMiniatures
+      , startTime = startTime
       }
-    , init config.id config.url config.autoplay
+    , init
+        { id = config.id
+        , url = config.url
+        , autoplay = config.autoplay
+        , startTime = startTime
+        }
     )
 
 
@@ -120,8 +132,19 @@ fromValue flags =
         enableMiniatures =
             Decode.decodeValue (Decode.field "enableMiniatures" Decode.bool) flags
                 |> Result.withDefault (String.endsWith ".m3u8" url)
+
+        startTime =
+            Decode.decodeValue (Decode.field "startTime" Decode.string) flags
+                |> Result.toMaybe
     in
-    fromConfig { url = url, id = id, autoplay = autoplay, mobile = mobile, enableMiniatures = enableMiniatures }
+    fromConfig
+        { url = url
+        , id = id
+        , autoplay = autoplay
+        , mobile = mobile
+        , enableMiniatures = enableMiniatures
+        , startTime = startTime
+        }
 
 
 type Settings
@@ -359,12 +382,85 @@ update msg model =
             ( { model | hasStarted = False }, Cmd.none )
 
 
-port polymnyVideoInit : ( String, String, Bool ) -> Cmd msg
+parseTime : String -> Maybe Float
+parseTime time =
+    case String.toFloat time of
+        Just t ->
+            Just t
+
+        _ ->
+            let
+                splitH =
+                    String.split "h" time
+
+                ( hours, restH ) =
+                    case splitH of
+                        [ rest ] ->
+                            ( Just 0, rest )
+
+                        [ h, rest ] ->
+                            ( String.toFloat h, rest )
+
+                        _ ->
+                            ( Nothing, "" )
+
+                splitM =
+                    String.split "m" restH
+
+                ( minutes, restM ) =
+                    case splitM of
+                        [ rest ] ->
+                            if String.contains "s" rest then
+                                ( Just 0, rest )
+
+                            else
+                                ( String.toFloat rest, "" )
+
+                        [ m, rest ] ->
+                            ( String.toFloat m, rest )
+
+                        _ ->
+                            ( Nothing, "" )
+
+                splitS =
+                    String.split "s" restM
+
+                ( realMinutes, seconds ) =
+                    case splitS of
+                        [ "" ] ->
+                            ( minutes, Just 0 )
+
+                        [ rest ] ->
+                            ( String.toFloat rest, Just 0 )
+
+                        [ s, "" ] ->
+                            ( minutes, String.toFloat s )
+
+                        _ ->
+                            ( Nothing, Nothing )
+            in
+            case ( hours, realMinutes, seconds ) of
+                ( Just h, Just m, Just s ) ->
+                    Just (3600 * h + 60 * m + s)
+
+                _ ->
+                    Nothing
 
 
-init : String -> String -> Bool -> Cmd msg
-init id url autoplay =
-    polymnyVideoInit ( id, url, autoplay )
+type alias InitAttr =
+    { id : String
+    , url : String
+    , autoplay : Bool
+    , startTime : Maybe Float
+    }
+
+
+port polymnyVideoInit : InitAttr -> Cmd msg
+
+
+init : InitAttr -> Cmd msg
+init attr =
+    polymnyVideoInit attr
 
 
 port polymnyVideoPlayPause : String -> Cmd msg
