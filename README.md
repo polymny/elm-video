@@ -35,7 +35,8 @@ Here is an example page ([see demo](https://polymny.github.io/elm-video/full-pag
             PolymnyVideo.fullpage({
                 node: document.getElementById("container"),
                 url: "video/manifest.m3u8",
-                autoplay: true
+                autoplay: true,
+                startTime: PolymnyVideo.getArgumentFromUrl("t")
             });
         </script>
     </body>
@@ -75,7 +76,8 @@ demo](https://polymny.github.io/elm-video/embed.html)):
             PolymnyVideo.embed({
                 node: document.getElementById("node"),
                 url: "video/manifest.m3u8",
-                autoplay: true
+                autoplay: true,
+                startTime: PolymnyVideo.getArgumentFromUrl("t")
             });
         </script>
     </body>
