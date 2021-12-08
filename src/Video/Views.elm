@@ -100,15 +100,26 @@ overlay model =
     let
         size =
             min (Tuple.first model.playerSize * 9 // 16) (Tuple.second model.playerSize)
+
+        attr =
+            [ Element.width Element.fill
+            , Element.height Element.fill
+            , Font.color (Element.rgb 1 1 1)
+            , Font.size (size // round (1.5 * toFloat scale))
+            , Element.htmlAttribute (Html.Attributes.tabindex -1)
+            , Events.overlayKey model
+            ]
+
+        attrWithHideCursor =
+            hideCursor :: attr
     in
     Element.el
-        [ Element.width Element.fill
-        , Element.height Element.fill
-        , Font.color (Element.rgb 1 1 1)
-        , Font.size (size // round (1.5 * toFloat scale))
-        , Element.htmlAttribute (Html.Attributes.tabindex -1)
-        , Events.overlayKey model
-        ]
+        (if model.animationFrame > model.overlayTimer + Video.fadeTimerOverlay.disappear then
+            attrWithHideCursor
+
+         else
+            attr
+        )
         (if not model.ready then
             Element.el [ Element.scale 5, Element.centerX, Element.centerY ] (animatedEl rotate [] (icon model Icons.spinner))
 
@@ -583,11 +594,6 @@ animatedUi =
         }
 
 
-hideCursor : Element.Attribute msg
-hideCursor =
-    Element.htmlAttribute (Html.Attributes.style "cursor" "none")
-
-
 fadeElement : Video.FadeTimer -> Float -> List (Element.Attribute msg) -> Element msg -> Element msg
 fadeElement fadeTimer current attr el =
     if current > fadeTimer.disappear then
@@ -779,3 +785,8 @@ boxShadowNone =
 pointerEventsNone : Element.Attr () msg
 pointerEventsNone =
     Element.htmlAttribute (Html.Attributes.style "pointer-events" "none")
+
+
+hideCursor : Element.Attribute msg
+hideCursor =
+    Element.htmlAttribute (Html.Attributes.style "cursor" "none")
