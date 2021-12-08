@@ -131,7 +131,7 @@ fromValue flags =
 
         enableMiniatures =
             Decode.decodeValue (Decode.field "enableMiniatures" Decode.bool) flags
-                |> Result.withDefault (String.endsWith ".m3u8" url)
+                |> Result.withDefault False
 
         startTime =
             Decode.decodeValue (Decode.field "startTime" Decode.string) flags
