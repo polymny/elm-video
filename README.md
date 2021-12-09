@@ -1,5 +1,7 @@
 *Yet another video player in Elm*
 
+[![](https://user-images.githubusercontent.com/3015402/145436890-0dd5ba59-13d3-47dc-a565-e9c09e45178e.png)](https://twitch.tforgione.fr/embed.html?v=01/22)
+
 This video player is optimized for HLS encoded video (if you want to encode
 your videos in HLS format, [check out our HLS video
 encoder](https://github.com/polymny/hls)). However, is also works correctly for
