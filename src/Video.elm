@@ -392,7 +392,7 @@ parseTime time =
                     String.split "h" time
 
                 ( hours, restH ) =
-                    case Debug.log "splitH" splitH of
+                    case splitH of
                         [ rest ] ->
                             ( Just 0, rest )
 
