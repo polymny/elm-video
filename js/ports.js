@@ -58,7 +58,6 @@ const PolymnyVideo = (function() {
             }
 
             options.id = "polymnyVideoId" + PolymnyVideo.idCounter++;
-            options.mobile = isDeviceMobile();
 
             const app = construct({
                 node: options.node,
@@ -221,6 +220,7 @@ const PolymnyVideo = (function() {
         });
 
         app.ports.polymnyVideoNowHasScreenSize.send([window.innerWidth, window.innerHeight]);
+        app.ports.polymnyVideoIsMobile.send(isDeviceMobile());
     };
 
     PolymnyVideo.getArgumentFromUrl = function(key) {

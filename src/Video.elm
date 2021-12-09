@@ -10,6 +10,7 @@ port module Video exposing
     , fromConfig
     , fromValue
     , init
+    , isMobile
     , nowHasPlayerSize
     , nowHasQualities
     , nowHasQuality
@@ -19,7 +20,6 @@ port module Video exposing
     , update
     )
 
-import Element
 import Json.Decode as Decode
 import Material.Icons
 import Material.Icons.Types exposing (Icon)
@@ -61,7 +61,6 @@ type alias Config =
     { url : String
     , id : String
     , autoplay : Bool
-    , mobile : Bool
     , enableMiniatures : Bool
     , startTime : Maybe String
     }
@@ -97,7 +96,7 @@ fromConfig config =
       , subtitleTrack = Nothing
       , showMiniature = Nothing
       , ready = False
-      , mobile = config.mobile
+      , mobile = False
       , enableMiniatures = config.enableMiniatures
       , startTime = startTime
       }
@@ -121,10 +120,6 @@ fromValue flags =
             Decode.decodeValue (Decode.field "url" Decode.string) flags
                 |> Result.withDefault "manifest.m3u8"
 
-        mobile =
-            Decode.decodeValue (Decode.field "mobile" Decode.bool) flags
-                |> Result.withDefault False
-
         autoplay =
             Decode.decodeValue (Decode.field "autoplay" Decode.bool) flags
                 |> Result.withDefault False
@@ -141,7 +136,6 @@ fromValue flags =
         { url = url
         , id = id
         , autoplay = autoplay
-        , mobile = mobile
         , enableMiniatures = enableMiniatures
         , startTime = startTime
         }
@@ -194,6 +188,7 @@ type Msg
     | NowHasSubtitleTrack (Maybe SubtitleTrack)
     | NowHasMiniature (Maybe ( Int, Int ))
     | AutoplayRefused
+    | IsMobile Bool
 
 
 type alias FadeTimer =
@@ -380,6 +375,9 @@ update msg model =
 
         AutoplayRefused ->
             ( { model | hasStarted = False }, Cmd.none )
+
+        IsMobile x ->
+            ( { model | mobile = x }, Cmd.none )
 
 
 parseTime : String -> Maybe Float
@@ -584,3 +582,11 @@ port polymnyVideoAutoplayRefused : (() -> msg) -> Sub msg
 autoplayRefused : msg -> Sub msg
 autoplayRefused msg =
     polymnyVideoAutoplayRefused (\_ -> msg)
+
+
+port polymnyVideoIsMobile : (Bool -> msg) -> Sub msg
+
+
+isMobile : (Bool -> msg) -> Sub msg
+isMobile =
+    polymnyVideoIsMobile

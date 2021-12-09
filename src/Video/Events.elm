@@ -44,6 +44,7 @@ subs model =
         , Video.nowHasScreenSize Video.NowHasScreenSize
         , Video.nowHasPlayerSize Video.NowHasPlayerSize
         , Video.autoplayRefused Video.AutoplayRefused
+        , Video.isMobile (\x -> Video.IsMobile x)
         , Browser.Events.onResize (\x y -> Video.NowHasScreenSize ( x, y ))
         , Browser.Events.onAnimationFrameDelta Video.AnimationFrameDelta
         , Browser.Events.onKeyDown (decodeKeyDown False model)
