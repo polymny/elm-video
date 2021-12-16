@@ -12,7 +12,7 @@ endif
 
 BUILD_DIR=js
 
-release-dev: dist/polymny-video-elm.js dist/polymny-video-full.js
+dev: dist/polymny-video-elm.js dist/polymny-video-full.js
 release: dist/polymny-video-elm.min.js dist/polymny-video-full.min.js
 
 js/main.js: src/**
