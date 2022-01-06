@@ -679,8 +679,11 @@ volumeBar model =
     let
         volume =
             round (100 * model.volume)
+
+        size =
+            min (Tuple.first model.playerSize * 9 // 16) (Tuple.second model.playerSize)
     in
-    Element.row [ Element.width (Element.px 100), Element.height Element.fill, Element.pointer, Events.volumeBar ]
+    Element.row [ Element.width (Element.px (2 * size // scale)), Element.height Element.fill, Element.pointer, Events.volumeBar ]
         [ Element.el
             [ Element.width (Element.fillPortion volume)
             , Element.height (Element.px 5)
