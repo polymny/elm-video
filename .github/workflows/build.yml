@@ -19,8 +19,6 @@ jobs:
             TZ: Antartica/Troll
             DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo apt update
-          sudo apt install npm
           sudo npm install --global uglify-js
       - name : Set up Elm
         uses: polymny/setup-elm@ee2fb83b65e2506c84aea6942092491feccd876a
