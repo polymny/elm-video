@@ -32,5 +32,5 @@ jobs:
         if: github.ref == 'refs/heads/master'
         with:
           personal_token: ${{ secrets.PERSONAL_TOKEN }}
-          publish_branch: master
+          publish_branch: gh-pages
           publish_dir: ./dist
