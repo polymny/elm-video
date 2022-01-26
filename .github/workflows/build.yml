@@ -1,0 +1,30 @@
+name: build
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  build-linux:
+    name: elm-video
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: polymny/setup-elm@ee2fb83b65e2506c84aea6942092491feccd876a
+        name : Set up Elm
+        with:
+          elm-version: 0.19.1
+      - name : Build
+        run: |
+          make dev && make release
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/master'
+        with:
+          personal_token: ${{ secrets.PERSONAL_TOKEN }}
+          publish_branch: master
+          publish_dir: ./dist
