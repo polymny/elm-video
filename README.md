@@ -10,7 +10,7 @@ any video format that is supported by your browser.
 ## Usage without elm
 
 Simply add the
-[polymny-video-full.min.js](https://github.com/polymny/elm-video/tree/master/dist/polymny-video-elm.min.js)
+[polymny-video-full.min.js](https://polymny.github.io/dist/polymny-video-full.min.js)
 to your page and use the `PolymnyVideo.fullpage` or `PolymnyVideo.embed`
 functions.
 
@@ -25,16 +25,16 @@ Here is an example page ([see demo](https://polymny.github.io/elm-video/full-pag
 <!doctype HTML>
 <html>
     <head>
-        <title>twitch.tforgione.fr</title>
+        <title>elm-video - full page example</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>
     <body>
-        <div id="container"></div>
-        <script src="/dist/polymny-video-full.min.js"></script>
+        <div id="node"></div>
+        <script src="dist/polymny-video-full.min.js"></script>
         <script>
             PolymnyVideo.fullpage({
-                node: document.getElementById("container"),
+                node: document.getElementById("node"),
                 url: "video/manifest.m3u8",
                 autoplay: true,
                 startTime: PolymnyVideo.getArgumentFromUrl("t"),
@@ -55,7 +55,7 @@ demo](https://polymny.github.io/elm-video/embed.html)):
 <!doctype HTML>
 <html>
     <head>
-        <title>twitch.tforgione.fr</title>
+        <title>elm-video - embed example</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
@@ -73,10 +73,10 @@ demo](https://polymny.github.io/elm-video/embed.html)):
     <body>
         <h1>An example of a centered video</h1>
         <div id="container"><div id="node"></div></div>
-        <script src="/dist/polymny-video-full.min.js"></script>
+        <script src="dist/polymny-video-full.min.js"></script>
         <script>
             PolymnyVideo.embed({
-                node: document.getElementById("container"),
+                node: document.getElementById("node"),
                 url: "video/manifest.m3u8",
                 autoplay: true,
                 startTime: PolymnyVideo.getArgumentFromUrl("t"),
@@ -109,6 +109,6 @@ them [here](https://github.com/polymny/elm-video/blob/master/elm.json)), and
 add the `src` directory to the `source-directories` of your application.
 
 You also need to serve
-[polymny-video-elm.min.js](https://github.com/polymny/elm-video/tree/master/dist/polymny-video-elm.min.js)
+[polymny-video-elm.min.js](https://polymny.github.io/dist/polymny-video-elm.min.js)
 which contains the `PolymnyVideo.setup` functions which setups the ports on
 your app.
