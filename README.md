@@ -10,7 +10,7 @@ any video format that is supported by your browser.
 ## Usage without elm
 
 Simply add the
-[polymny-video-full.min.js](https://polymny.github.io/dist/polymny-video-full.min.js)
+[polymny-video-full.min.js](https://polymny.github.io/elm-video/dist/polymny-video-full.min.js)
 to your page and use the `PolymnyVideo.fullpage` or `PolymnyVideo.embed`
 functions.
 
@@ -109,6 +109,6 @@ them [here](https://github.com/polymny/elm-video/blob/master/elm.json)), and
 add the `src` directory to the `source-directories` of your application.
 
 You also need to serve
-[polymny-video-elm.min.js](https://polymny.github.io/dist/polymny-video-elm.min.js)
+[polymny-video-elm.min.js](https://polymny.github.io/elm-video/dist/polymny-video-elm.min.js)
 which contains the `PolymnyVideo.setup` functions which setups the ports on
 your app.
