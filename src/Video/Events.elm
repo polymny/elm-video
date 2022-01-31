@@ -125,7 +125,7 @@ decodeVolumeBar : Decode.Decoder Video.Msg
 decodeVolumeBar =
     Decode.map3 (\x y z -> Video.SetVolume (toFloat x / toFloat y) False z)
         (Decode.field "layerX" Decode.int)
-        (Decode.field "target" (Decode.field "offsetWidth" Decode.int |> Decode.map (Debug.log "offsetWidth")))
+        (Decode.field "target" (Decode.field "offsetWidth" Decode.int))
         (Decode.field "pointerId" Decode.value |> Decode.map Just)
 
 
@@ -140,7 +140,7 @@ decodeVolumeMove model =
     if model.holdingVolume then
         Decode.map3 (\x y z -> Video.SetVolume (toFloat x / toFloat y) False z)
             (Decode.field "layerX" Decode.int)
-            (Decode.field "target" (Decode.field "offsetWidth" Decode.int |> Decode.map (Debug.log "offsetWidth")))
+            (Decode.field "target" (Decode.field "offsetWidth" Decode.int))
             (Decode.field "pointerId" Decode.value |> Decode.map Just)
 
     else
