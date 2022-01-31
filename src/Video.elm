@@ -54,6 +54,7 @@ type alias Video =
     , mobile : Bool
     , enableMiniatures : Bool
     , startTime : Maybe Float
+    , holdingSeek : Bool
     }
 
 
@@ -99,6 +100,7 @@ fromConfig config =
       , mobile = False
       , enableMiniatures = config.enableMiniatures
       , startTime = startTime
+      , holdingSeek = False
       }
     , init
         { id = config.id
@@ -161,7 +163,8 @@ type Msg
     = Noop
     | ResetTimer
     | PlayPause
-    | Seek Float
+    | Seek Float (Maybe Decode.Value)
+    | Unseek Decode.Value
     | ToggleSettings Settings
     | SetPlaybackRate Float
     | SetQuality Quality.Quality
@@ -235,7 +238,7 @@ update msg model =
             in
             ( { modelResetTimer | icon = ( model.animationFrame, icon ) }, playPause modelResetTimer.id )
 
-        Seek t ->
+        Seek t pointerId ->
             let
                 time =
                     max (min t model.duration) 0
@@ -250,7 +253,15 @@ update msg model =
                     else
                         model.icon
             in
-            ( { modelResetTimer | icon = i }, seek modelResetTimer.id time )
+            case pointerId of
+                Nothing ->
+                    ( { modelResetTimer | icon = i }, seek modelResetTimer.id time )
+
+                Just p ->
+                    ( { modelResetTimer | icon = i, holdingSeek = True }, Cmd.batch [ seek modelResetTimer.id time, setCapture model p ] )
+
+        Unseek pointerId ->
+            ( { model | holdingSeek = False }, releaseCapture model pointerId )
 
         SetPlaybackRate rate ->
             ( modelResetTimer, setPlaybackRate modelResetTimer.id rate )
@@ -590,3 +601,19 @@ port polymnyVideoIsMobile : (Bool -> msg) -> Sub msg
 isMobile : (Bool -> msg) -> Sub msg
 isMobile =
     polymnyVideoIsMobile
+
+
+port polymnyVideoSetCapture : ( String, Decode.Value ) -> Cmd msg
+
+
+setCapture : Video -> Decode.Value -> Cmd msg
+setCapture model pointerId =
+    polymnyVideoSetCapture ( model.id, pointerId )
+
+
+port polymnyVideoReleaseCapture : ( String, Decode.Value ) -> Cmd msg
+
+
+releaseCapture : Video -> Decode.Value -> Cmd msg
+releaseCapture model pointerId =
+    polymnyVideoReleaseCapture ( model.id, pointerId )

@@ -378,6 +378,7 @@ seekbar model =
                 (Element.width Element.fill
                     :: Element.height Element.fill
                     :: Element.pointer
+                    :: Element.htmlAttribute (Html.Attributes.id (model.id ++ "-seekbar"))
                     :: Events.seekBar model
                 )
                 Element.none
@@ -640,7 +641,7 @@ rewindButton : Video -> Element Video.Msg
 rewindButton model =
     Input.button [ boxShadowNone ]
         { label = icon model Material.Icons.fast_rewind
-        , onPress = Just (Video.Seek (model.position - 10))
+        , onPress = Just (Video.Seek (model.position - 10) Nothing)
         }
 
 
@@ -648,7 +649,7 @@ fastForwardButton : Video -> Element Video.Msg
 fastForwardButton model =
     Input.button [ boxShadowNone ]
         { label = icon model Material.Icons.fast_forward
-        , onPress = Just (Video.Seek (model.position + 10))
+        , onPress = Just (Video.Seek (model.position + 10) Nothing)
         }
 
 

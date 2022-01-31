@@ -100,7 +100,10 @@ overlayKey model =
 seekBar : Video -> List (Element.Attribute Video.Msg)
 seekBar model =
     List.map Element.htmlAttribute
-        [ Html.Events.on "click" (decodeSeek model)
+        [ Html.Events.on "pointerdown" (decodeSeek model)
+        , Html.Events.on "pointerup" decodeUnseek
+        , Html.Events.on "pointerout" decodeUnseek
+        , Html.Events.on "pointermove" (decodeSeekMove model)
         , Html.Events.on "mouseenter" decodeMouseEnter
         , Html.Events.on "mouseleave" decodeMouseLeave
         , Html.Events.on "mousemove" decodeMouseEnter
@@ -143,9 +146,28 @@ decodeVolumeChange =
 
 decodeSeek : Video -> Decode.Decoder Video.Msg
 decodeSeek model =
-    Decode.map2 (\x y -> Video.Seek (toFloat x / toFloat y * model.duration))
+    Decode.map3 (\x y -> Video.Seek (toFloat x / toFloat y * model.duration))
         (Decode.field "layerX" Decode.int)
         (Decode.field "target" <| Decode.field "offsetWidth" Decode.int)
+        (Decode.field "pointerId" Decode.value |> Decode.map Just)
+
+
+decodeUnseek : Decode.Decoder Video.Msg
+decodeUnseek =
+    Decode.map Video.Unseek
+        (Decode.field "pointerId" Decode.value)
+
+
+decodeSeekMove : Video -> Decode.Decoder Video.Msg
+decodeSeekMove model =
+    if model.holdingSeek then
+        Decode.map3 (\x y -> Video.Seek (toFloat x / toFloat y * model.duration))
+            (Decode.field "layerX" Decode.int)
+            (Decode.field "target" <| Decode.field "offsetWidth" Decode.int)
+            (Decode.succeed Nothing)
+
+    else
+        Decode.succeed Video.Noop
 
 
 decodeProgress : Decode.Decoder Video.Msg
@@ -215,19 +237,19 @@ decodeKeyDown focusonly model =
                         Decode.succeed Video.PlayPause
 
                     ( False, "KeyJ" ) ->
-                        Decode.succeed (Video.Seek (max 0 (model.position - 10)))
+                        Decode.succeed (Video.Seek (max 0 (model.position - 10)) Nothing)
 
                     ( False, "KeyL" ) ->
-                        Decode.succeed (Video.Seek (min model.duration (model.position + 10)))
+                        Decode.succeed (Video.Seek (min model.duration (model.position + 10)) Nothing)
 
                     ( False, "KeyK" ) ->
                         Decode.succeed Video.PlayPause
 
                     ( True, "ArrowLeft" ) ->
-                        Decode.succeed (Video.Seek (max 0 (model.position - 5)))
+                        Decode.succeed (Video.Seek (max 0 (model.position - 5)) Nothing)
 
                     ( True, "ArrowRight" ) ->
-                        Decode.succeed (Video.Seek (min model.duration (model.position + 5)))
+                        Decode.succeed (Video.Seek (min model.duration (model.position + 5)) Nothing)
 
                     ( True, "ArrowDown" ) ->
                         Decode.succeed (Video.SetVolume (max 0 (model.volume - 0.1)) model.muted)
@@ -248,64 +270,64 @@ decodeKeyDown focusonly model =
                             )
 
                     ( False, "Digit0" ) ->
-                        Decode.succeed (Video.Seek 0)
+                        Decode.succeed (Video.Seek 0 Nothing)
 
                     ( False, "Numpad0" ) ->
-                        Decode.succeed (Video.Seek 0)
+                        Decode.succeed (Video.Seek 0 Nothing)
 
                     ( False, "Digit1" ) ->
-                        Decode.succeed (Video.Seek (0.1 * model.duration))
+                        Decode.succeed (Video.Seek (0.1 * model.duration) Nothing)
 
                     ( False, "Numpad1" ) ->
-                        Decode.succeed (Video.Seek (0.1 * model.duration))
+                        Decode.succeed (Video.Seek (0.1 * model.duration) Nothing)
 
                     ( False, "Digit2" ) ->
-                        Decode.succeed (Video.Seek (0.2 * model.duration))
+                        Decode.succeed (Video.Seek (0.2 * model.duration) Nothing)
 
                     ( False, "Numpad2" ) ->
-                        Decode.succeed (Video.Seek (0.2 * model.duration))
+                        Decode.succeed (Video.Seek (0.2 * model.duration) Nothing)
 
                     ( False, "Digit3" ) ->
-                        Decode.succeed (Video.Seek (0.3 * model.duration))
+                        Decode.succeed (Video.Seek (0.3 * model.duration) Nothing)
 
                     ( False, "Numpad3" ) ->
-                        Decode.succeed (Video.Seek (0.3 * model.duration))
+                        Decode.succeed (Video.Seek (0.3 * model.duration) Nothing)
 
                     ( False, "Digit4" ) ->
-                        Decode.succeed (Video.Seek (0.4 * model.duration))
+                        Decode.succeed (Video.Seek (0.4 * model.duration) Nothing)
 
                     ( False, "Numpad4" ) ->
-                        Decode.succeed (Video.Seek (0.4 * model.duration))
+                        Decode.succeed (Video.Seek (0.4 * model.duration) Nothing)
 
                     ( False, "Digit5" ) ->
-                        Decode.succeed (Video.Seek (0.5 * model.duration))
+                        Decode.succeed (Video.Seek (0.5 * model.duration) Nothing)
 
                     ( False, "Numpad5" ) ->
-                        Decode.succeed (Video.Seek (0.5 * model.duration))
+                        Decode.succeed (Video.Seek (0.5 * model.duration) Nothing)
 
                     ( False, "Digit6" ) ->
-                        Decode.succeed (Video.Seek (0.6 * model.duration))
+                        Decode.succeed (Video.Seek (0.6 * model.duration) Nothing)
 
                     ( False, "Numpad6" ) ->
-                        Decode.succeed (Video.Seek (0.6 * model.duration))
+                        Decode.succeed (Video.Seek (0.6 * model.duration) Nothing)
 
                     ( False, "Digit7" ) ->
-                        Decode.succeed (Video.Seek (0.7 * model.duration))
+                        Decode.succeed (Video.Seek (0.7 * model.duration) Nothing)
 
                     ( False, "Numpad7" ) ->
-                        Decode.succeed (Video.Seek (0.7 * model.duration))
+                        Decode.succeed (Video.Seek (0.7 * model.duration) Nothing)
 
                     ( False, "Digit8" ) ->
-                        Decode.succeed (Video.Seek (0.8 * model.duration))
+                        Decode.succeed (Video.Seek (0.8 * model.duration) Nothing)
 
                     ( False, "Numpad8" ) ->
-                        Decode.succeed (Video.Seek (0.8 * model.duration))
+                        Decode.succeed (Video.Seek (0.8 * model.duration) Nothing)
 
                     ( False, "Digit10" ) ->
-                        Decode.succeed (Video.Seek (0.9 * model.duration))
+                        Decode.succeed (Video.Seek (0.9 * model.duration) Nothing)
 
                     ( False, "Numpad9" ) ->
-                        Decode.succeed (Video.Seek (0.9 * model.duration))
+                        Decode.succeed (Video.Seek (0.9 * model.duration) Nothing)
 
                     _ ->
                         Decode.fail ("no shortcut for code " ++ x)

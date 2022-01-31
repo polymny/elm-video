@@ -220,6 +220,16 @@ const PolymnyVideo = (function() {
             hls.subtitleTrack = arg[1];
         });
 
+        app.ports.polymnyVideoSetCapture.subscribe(function(arg) {
+            const seekbar = document.getElementById(arg[0] + '-seekbar');
+            seekbar.setPointerCapture(arg[1]);
+        });
+
+        app.ports.polymnyVideoSetCapture.subscribe(function(arg) {
+            const seekbar = document.getElementById(arg[0] + '-seekbar');
+            seekbar.releasePointerCapture(arg[1]);
+        });
+
         app.ports.polymnyVideoNowHasScreenSize.send([window.innerWidth, window.innerHeight]);
         app.ports.polymnyVideoIsMobile.send(isDeviceMobile());
     };
