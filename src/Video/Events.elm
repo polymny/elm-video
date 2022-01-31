@@ -110,16 +110,41 @@ seekBar model =
         ]
 
 
-volumeBar : Element.Attribute Video.Msg
-volumeBar =
-    Element.htmlAttribute (Html.Events.on "click" decodeVolumeBar)
+volumeBar : Video -> List (Element.Attribute Video.Msg)
+volumeBar model =
+    List.map Element.htmlAttribute
+        [ Html.Events.on "pointerdown" decodeVolumeBar
+        , Html.Events.on "pointerup" decodeUnsetVolume
+        , Html.Events.on "pointerout" decodeUnsetVolume
+        , Html.Events.on "pointerdown" decodeVolumeBar
+        , Html.Events.on "pointermove" (decodeVolumeMove model)
+        ]
 
 
 decodeVolumeBar : Decode.Decoder Video.Msg
 decodeVolumeBar =
-    Decode.map2 (\x y -> Video.SetVolume (toFloat x / toFloat y) False)
+    Decode.map3 (\x y z -> Video.SetVolume (toFloat x / toFloat y) False z)
         (Decode.field "layerX" Decode.int)
-        (Decode.field "target" <| Decode.field "offsetWidth" Decode.int)
+        (Decode.field "target" (Decode.field "offsetWidth" Decode.int |> Decode.map (Debug.log "offsetWidth")))
+        (Decode.field "pointerId" Decode.value |> Decode.map Just)
+
+
+decodeUnsetVolume : Decode.Decoder Video.Msg
+decodeUnsetVolume =
+    Decode.map Video.UnsetVolume
+        (Decode.field "pointerId" Decode.value)
+
+
+decodeVolumeMove : Video -> Decode.Decoder Video.Msg
+decodeVolumeMove model =
+    if model.holdingVolume then
+        Decode.map3 (\x y z -> Video.SetVolume (toFloat x / toFloat y) False z)
+            (Decode.field "layerX" Decode.int)
+            (Decode.field "target" (Decode.field "offsetWidth" Decode.int |> Decode.map (Debug.log "offsetWidth")))
+            (Decode.field "pointerId" Decode.value |> Decode.map Just)
+
+    else
+        Decode.succeed Video.Noop
 
 
 decodeDurationChanged : Decode.Decoder Video.Msg
@@ -252,13 +277,13 @@ decodeKeyDown focusonly model =
                         Decode.succeed (Video.Seek (min model.duration (model.position + 5)) Nothing)
 
                     ( True, "ArrowDown" ) ->
-                        Decode.succeed (Video.SetVolume (max 0 (model.volume - 0.1)) model.muted)
+                        Decode.succeed (Video.SetVolume (max 0 (model.volume - 0.1)) model.muted Nothing)
 
                     ( True, "ArrowUp" ) ->
-                        Decode.succeed (Video.SetVolume (min 1 (model.volume + 0.1)) model.muted)
+                        Decode.succeed (Video.SetVolume (min 1 (model.volume + 0.1)) model.muted Nothing)
 
                     ( False, "KeyM" ) ->
-                        Decode.succeed (Video.SetVolume model.volume (not model.muted))
+                        Decode.succeed (Video.SetVolume model.volume (not model.muted) Nothing)
 
                     ( False, "KeyF" ) ->
                         Decode.succeed

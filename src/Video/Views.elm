@@ -671,7 +671,7 @@ volumeButton model =
     in
     Input.button [ boxShadowNone ]
         { label = i
-        , onPress = Just (Video.SetVolume model.volume (not model.muted))
+        , onPress = Just (Video.SetVolume model.volume (not model.muted) Nothing)
         }
 
 
@@ -684,22 +684,39 @@ volumeBar model =
         size =
             min (Tuple.first model.playerSize * 9 // 16) (Tuple.second model.playerSize)
     in
-    Element.row [ Element.width (Element.px (2 * size // scale)), Element.height Element.fill, Element.pointer, Events.volumeBar ]
-        [ Element.el
-            [ Element.width (Element.fillPortion volume)
-            , Element.height (Element.px 5)
-            , Element.centerY
-            , Background.color (Element.rgb 1 1 1)
-            ]
-            Element.none
-        , Element.el
-            [ Element.width (Element.fillPortion (100 - volume))
-            , Element.height (Element.px 5)
-            , Element.centerY
-            , Background.color (Element.rgb 0.5 0.5 0.5)
-            ]
-            Element.none
+    Element.el
+        [ Element.width (Element.px (2 * size // scale))
+        , Element.height Element.fill
+        , Element.pointer
+        , Element.behindContent
+            (Element.row [ Element.width Element.fill, Element.height Element.fill ]
+                [ Element.el
+                    [ Element.width (Element.fillPortion volume)
+                    , Element.height (Element.px 5)
+                    , Element.centerY
+                    , Background.color (Element.rgb 1 1 1)
+                    ]
+                    Element.none
+                , Element.el
+                    [ Element.width (Element.fillPortion (100 - volume))
+                    , Element.height (Element.px 5)
+                    , Element.centerY
+                    , Background.color (Element.rgb 0.5 0.5 0.5)
+                    ]
+                    Element.none
+                ]
+            )
+        , Element.inFront
+            (Element.el
+                (Element.width Element.fill
+                    :: Element.height Element.fill
+                    :: Element.htmlAttribute (Html.Attributes.id (model.id ++ "-volumebar"))
+                    :: Events.volumeBar model
+                )
+                Element.none
+            )
         ]
+        Element.none
 
 
 fullscreenButton : Video -> Element Video.Msg

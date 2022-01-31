@@ -55,6 +55,7 @@ type alias Video =
     , enableMiniatures : Bool
     , startTime : Maybe Float
     , holdingSeek : Bool
+    , holdingVolume : Bool
     }
 
 
@@ -101,6 +102,7 @@ fromConfig config =
       , enableMiniatures = config.enableMiniatures
       , startTime = startTime
       , holdingSeek = False
+      , holdingVolume = False
       }
     , init
         { id = config.id
@@ -169,7 +171,8 @@ type Msg
     | SetPlaybackRate Float
     | SetQuality Quality.Quality
     | SetSubtitleTrack Int
-    | SetVolume Float Bool
+    | SetVolume Float Bool (Maybe Decode.Value)
+    | UnsetVolume Decode.Value
     | RequestFullscreen
     | ExitFullscreen
     | AnimationFrameDelta Float
@@ -244,7 +247,10 @@ update msg model =
                     max (min t model.duration) 0
 
                 i =
-                    if time > model.position then
+                    if model.holdingSeek then
+                        model.icon
+
+                    else if time > model.position then
                         ( model.animationFrame, Material.Icons.fast_forward )
 
                     else if time < model.position then
@@ -258,10 +264,10 @@ update msg model =
                     ( { modelResetTimer | icon = i }, seek modelResetTimer.id time )
 
                 Just p ->
-                    ( { modelResetTimer | icon = i, holdingSeek = True }, Cmd.batch [ seek modelResetTimer.id time, setCapture model p ] )
+                    ( { modelResetTimer | holdingSeek = True }, Cmd.batch [ seek modelResetTimer.id time, setSeekbarCapture model p ] )
 
         Unseek pointerId ->
-            ( { model | holdingSeek = False }, releaseCapture model pointerId )
+            ( { model | holdingSeek = False }, releaseSeekbarCapture model pointerId )
 
         SetPlaybackRate rate ->
             ( modelResetTimer, setPlaybackRate modelResetTimer.id rate )
@@ -294,10 +300,13 @@ update msg model =
         SetSubtitleTrack t ->
             ( modelResetTimer, setSubtitleTrack modelResetTimer.id t )
 
-        SetVolume v m ->
+        SetVolume v m pointerId ->
             let
                 i =
-                    if m && not model.muted then
+                    if model.holdingVolume then
+                        model.icon
+
+                    else if m && not model.muted then
                         ( model.animationFrame, Material.Icons.volume_off )
 
                     else if not m && model.muted then
@@ -312,7 +321,15 @@ update msg model =
                     else
                         model.icon
             in
-            ( { modelResetTimer | icon = i }, setVolume modelResetTimer.id { volume = v, muted = m } )
+            case pointerId of
+                Nothing ->
+                    ( { modelResetTimer | icon = i }, setVolume modelResetTimer.id { volume = v, muted = m } )
+
+                Just p ->
+                    ( { modelResetTimer | holdingVolume = True }, Cmd.batch [ setVolume modelResetTimer.id { volume = v, muted = m }, setVolumeBarCapture model p ] )
+
+        UnsetVolume pointerId ->
+            ( { model | holdingVolume = False }, releaseVolumeBarCapture model pointerId )
 
         AnimationFrameDelta delta ->
             let
@@ -603,17 +620,33 @@ isMobile =
     polymnyVideoIsMobile
 
 
-port polymnyVideoSetCapture : ( String, Decode.Value ) -> Cmd msg
+port polymnyVideoSetSeekbarCapture : ( String, Decode.Value ) -> Cmd msg
 
 
-setCapture : Video -> Decode.Value -> Cmd msg
-setCapture model pointerId =
-    polymnyVideoSetCapture ( model.id, pointerId )
+setSeekbarCapture : Video -> Decode.Value -> Cmd msg
+setSeekbarCapture model pointerId =
+    polymnyVideoSetSeekbarCapture ( model.id, pointerId )
 
 
-port polymnyVideoReleaseCapture : ( String, Decode.Value ) -> Cmd msg
+port polymnyVideoReleaseSeekbarCapture : ( String, Decode.Value ) -> Cmd msg
 
 
-releaseCapture : Video -> Decode.Value -> Cmd msg
-releaseCapture model pointerId =
-    polymnyVideoReleaseCapture ( model.id, pointerId )
+releaseSeekbarCapture : Video -> Decode.Value -> Cmd msg
+releaseSeekbarCapture model pointerId =
+    polymnyVideoReleaseSeekbarCapture ( model.id, pointerId )
+
+
+port polymnyVideoSetVolumeBarCapture : ( String, Decode.Value ) -> Cmd msg
+
+
+setVolumeBarCapture : Video -> Decode.Value -> Cmd msg
+setVolumeBarCapture model pointerId =
+    polymnyVideoSetVolumeBarCapture ( model.id, pointerId )
+
+
+port polymnyVideoReleaseVolumeBarCapture : ( String, Decode.Value ) -> Cmd msg
+
+
+releaseVolumeBarCapture : Video -> Decode.Value -> Cmd msg
+releaseVolumeBarCapture model pointerId =
+    polymnyVideoReleaseVolumeBarCapture ( model.id, pointerId )
