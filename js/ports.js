@@ -105,7 +105,7 @@ const PolymnyVideo = (function() {
     }
 
     function initVideo(arg, app, video) {
-        video.addEventListener('canplay', () => {
+        video.addEventListener('loadedmetadata', () => {
             app.ports.polymnyVideoNowHasQualities.send([0]);
         });
 
