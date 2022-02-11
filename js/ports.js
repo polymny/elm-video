@@ -225,7 +225,7 @@ const PolymnyVideo = (function() {
             seekbar.setPointerCapture(arg[1]);
         });
 
-        app.ports.polymnyVideoSetSeekbarCapture.subscribe(function(arg) {
+        app.ports.polymnyVideoReleaseSeekbarCapture.subscribe(function(arg) {
             const seekbar = document.getElementById(arg[0] + '-seekbar');
             seekbar.releasePointerCapture(arg[1]);
         });
@@ -235,7 +235,7 @@ const PolymnyVideo = (function() {
             volumebar.setPointerCapture(arg[1]);
         });
 
-        app.ports.polymnyVideoSetVolumeBarCapture.subscribe(function(arg) {
+        app.ports.polymnyVideoReleaseVolumeBarCapture.subscribe(function(arg) {
             const volumebar = document.getElementById(arg[0] + '-volumebar');
             volumebar.releasePointerCapture(arg[1]);
         });
