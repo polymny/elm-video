@@ -72,6 +72,7 @@ const PolymnyVideo = (function() {
     function initHls(arg, app, video) {
         if (Hls.isSupported()) {
             let hls = new Hls();
+            hls.startLevel = -1;
             hls.loadSource(arg.url);
 
             hls.on(Hls.Events.MANIFEST_PARSED, function() {
@@ -104,7 +105,7 @@ const PolymnyVideo = (function() {
     }
 
     function initVideo(arg, app, video) {
-        video.addEventListener('canplay', () => {
+        video.addEventListener('loadedmetadata', () => {
             app.ports.polymnyVideoNowHasQualities.send([0]);
         });
 
@@ -217,6 +218,26 @@ const PolymnyVideo = (function() {
         app.ports.polymnyVideoSetSubtitleTrack.subscribe(function(arg) {
             hls.subtitleDisplay = arg[1] !== -1;
             hls.subtitleTrack = arg[1];
+        });
+
+        app.ports.polymnyVideoSetSeekbarCapture.subscribe(function(arg) {
+            const seekbar = document.getElementById(arg[0] + '-seekbar');
+            seekbar.setPointerCapture(arg[1]);
+        });
+
+        app.ports.polymnyVideoReleaseSeekbarCapture.subscribe(function(arg) {
+            const seekbar = document.getElementById(arg[0] + '-seekbar');
+            seekbar.releasePointerCapture(arg[1]);
+        });
+
+        app.ports.polymnyVideoSetVolumeBarCapture.subscribe(function(arg) {
+            const volumebar = document.getElementById(arg[0] + '-volumebar');
+            volumebar.setPointerCapture(arg[1]);
+        });
+
+        app.ports.polymnyVideoReleaseVolumeBarCapture.subscribe(function(arg) {
+            const volumebar = document.getElementById(arg[0] + '-volumebar');
+            volumebar.releasePointerCapture(arg[1]);
         });
 
         app.ports.polymnyVideoNowHasScreenSize.send([window.innerWidth, window.innerHeight]);

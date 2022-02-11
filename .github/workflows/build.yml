@@ -1,0 +1,38 @@
+name: build
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  build-linux:
+    name: elm-video
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        env:
+            TZ: Antartica/Troll
+            DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo npm install --global uglify-js
+      - name : Set up Elm
+        uses: polymny/setup-elm@ee2fb83b65e2506c84aea6942092491feccd876a
+        with:
+          elm-version: 0.19.1
+      - name : Build
+        run: |
+          make dev && make release
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/master'
+        with:
+          personal_token: ${{ secrets.PERSONAL_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./dist
+          destination_dir: dist
+          keep_files: true
