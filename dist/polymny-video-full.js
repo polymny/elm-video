@@ -5234,6 +5234,9 @@ var $author$project$Video$polymnyVideoInit = _Platform_outgoingPort(
 					'id',
 					$elm$json$Json$Encode$string($.id)),
 					_Utils_Tuple2(
+					'muted',
+					$elm$json$Json$Encode$bool($.muted)),
+					_Utils_Tuple2(
 					'startTime',
 					function ($) {
 						return A3($elm$core$Maybe$destruct, $elm$json$Json$Encode$null, $elm$json$Json$Encode$float, $);
@@ -5479,7 +5482,7 @@ var $author$project$Video$fromConfig = function (config) {
 			isFullscreen: false,
 			loaded: _List_Nil,
 			mobile: false,
-			muted: false,
+			muted: config.muted,
 			overlayTimer: 0,
 			playbackRate: 1,
 			playerSize: _Utils_Tuple2(0, 0),
@@ -5499,7 +5502,7 @@ var $author$project$Video$fromConfig = function (config) {
 			volume: 1
 		},
 		$author$project$Video$init(
-			{autoplay: config.autoplay, id: config.id, startTime: startTime, url: config.url}));
+			{autoplay: config.autoplay, id: config.id, muted: config.muted, startTime: startTime, url: config.url}));
 };
 var $elm$json$Json$Decode$string = _Json_decodeString;
 var $elm$core$Result$toMaybe = function (result) {
@@ -5532,6 +5535,13 @@ var $author$project$Video$fromValue = function (flags) {
 			$elm$json$Json$Decode$decodeValue,
 			A2($elm$json$Json$Decode$field, 'startTime', $elm$json$Json$Decode$string),
 			flags));
+	var muted = A2(
+		$elm$core$Result$withDefault,
+		false,
+		A2(
+			$elm$json$Json$Decode$decodeValue,
+			A2($elm$json$Json$Decode$field, 'muted', $elm$json$Json$Decode$bool),
+			flags));
 	var id = A2(
 		$elm$core$Result$withDefault,
 		'polymnyVideo',
@@ -5554,7 +5564,7 @@ var $author$project$Video$fromValue = function (flags) {
 			A2($elm$json$Json$Decode$field, 'autoplay', $elm$json$Json$Decode$bool),
 			flags));
 	return $author$project$Video$fromConfig(
-		{autoplay: autoplay, enableMiniatures: enableMiniatures, id: id, startTime: startTime, url: url});
+		{autoplay: autoplay, enableMiniatures: enableMiniatures, id: id, muted: muted, startTime: startTime, url: url});
 };
 var $mdgriffith$elm_ui$Internal$Model$Colored = F3(
 	function (a, b, c) {
@@ -16108,6 +16118,10 @@ const PolymnyVideo = (function() {
 
                 if (arg.startTime !== null) {
                     video.currentTime = arg.startTime;
+                }
+
+                if (arg.muted === true) {
+                    video.muted = true;
                 }
 
                 if (arg.autoplay) {

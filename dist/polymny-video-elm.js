@@ -147,6 +147,10 @@ const PolymnyVideo = (function() {
                     video.currentTime = arg.startTime;
                 }
 
+                if (arg.muted === true) {
+                    video.muted = true;
+                }
+
                 if (arg.autoplay) {
                     let promise = video.play();
                     if (promise !== undefined) {
