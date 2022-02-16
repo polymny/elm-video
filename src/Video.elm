@@ -65,6 +65,7 @@ type alias Config =
     , autoplay : Bool
     , enableMiniatures : Bool
     , startTime : Maybe String
+    , muted : Bool
     }
 
 
@@ -82,7 +83,7 @@ fromConfig config =
       , duration = 0
       , loaded = []
       , volume = 1
-      , muted = False
+      , muted = config.muted
       , isFullscreen = False
       , quality = Nothing
       , qualities = []
@@ -109,6 +110,7 @@ fromConfig config =
         , url = config.url
         , autoplay = config.autoplay
         , startTime = startTime
+        , muted = config.muted
         }
     )
 
@@ -135,6 +137,10 @@ fromValue flags =
         startTime =
             Decode.decodeValue (Decode.field "startTime" Decode.string) flags
                 |> Result.toMaybe
+
+        muted =
+            Decode.decodeValue (Decode.field "muted" Decode.bool) flags
+                |> Result.withDefault False
     in
     fromConfig
         { url = url
@@ -142,6 +148,7 @@ fromValue flags =
         , autoplay = autoplay
         , enableMiniatures = enableMiniatures
         , startTime = startTime
+        , muted = muted
         }
 
 
@@ -481,6 +488,7 @@ type alias InitAttr =
     , url : String
     , autoplay : Bool
     , startTime : Maybe Float
+    , muted : Bool
     }
 
 
