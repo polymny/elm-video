@@ -217,7 +217,7 @@ const PolymnyVideo = (function() {
 
         app.ports.polymnyVideoSetVolume.subscribe(function(arg) {
             const video = document.getElementById(arg[0]);
-            video.volume = arg[1].volume;
+            video.volume = Math.max(0, Math.min(1, arg[1].volume));
             video.muted = arg[1].muted;
         });
 
