@@ -16074,7 +16074,7 @@ const PolymnyVideo = (function() {
             hls.attachMedia(video);
             return hls;
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            initVideo(arg, video);
+            initVideo(arg, app, video);
         }
 
     }
