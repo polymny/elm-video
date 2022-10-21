@@ -12,8 +12,8 @@ endif
 
 BUILD_DIR=js
 
-dev: dist/polymny-video-elm.js dist/polymny-video-full.js
 release: dist/polymny-video-elm.min.js dist/polymny-video-full.min.js
+dev: dist/polymny-video-elm.js dist/polymny-video-full.js
 
 js/main.js: src/**
 	$(ELM) make src/Main/*.elm --output $(BUILD_DIR)/main.js
