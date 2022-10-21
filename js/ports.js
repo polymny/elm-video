@@ -69,35 +69,53 @@ const PolymnyVideo = (function() {
         };
     }
 
-    function initHls(arg, app, video) {
-        if (Hls.isSupported()) {
-            let hls = new Hls();
-            hls.startLevel = -1;
-            hls.loadSource(arg.url);
+    function initShaka(arg, app, video) {
+        shaka.polyfill.installAll();
 
-            hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                const availableQualities = hls.levels.map((l) => l.height);
-                availableQualities.unshift(0);
-                app.ports.polymnyVideoNowHasQualities.send(availableQualities);
-            });
+        if (shaka.Player.isBrowserSupported()) {
+            let player = new shaka.Player(video);
 
-            hls.on(Hls.Events.LEVEL_SWITCHED, function(_, data) {
-                app.ports.polymnyVideoNowHasQuality.send({
-                    auto: hls.autoLevelEnabled,
-                    height: hls.levels[data.level].height
+            player.configure('streaming.useNativeHlsOnSafari', false);
+
+            alert(player.getConfiguration().streaming.useNativeHlsOnSafari)
+            let p = player.load(arg.url);
+            p
+                .then(() => {
+                    const availableQualities = player.getManifest().variants.map(x => x.video.height);
+                    availableQualities.unshift(0);
+                    app.ports.polymnyVideoNowHasQualities.send(availableQualities);
+                })
+                .catch(e => {
+                    alert(e);
                 });
-            })
 
-            hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, function(_, data) {
-                app.ports.polymnyVideoNowHasSubtitles.send(data.subtitleTracks);
-            });
+            // let hls = new Hls();
+            // hls.startLevel = -1;
+            // hls.loadSource(arg.url);
 
-            hls.on(Hls.Events.SUBTITLE_TRACK_SWITCH, function(_, data) {
-                app.ports.polymnyVideoNowHasSubtitleTrack.send(data.id === -1 ? null : hls.subtitleTracks[data.id]);
-            });
+            // hls.on(Hls.Events.MANIFEST_PARSED, function() {
+            //     const availableQualities = hls.levels.map((l) => l.height);
+            //     availableQualities.unshift(0);
+            //     app.ports.polymnyVideoNowHasQualities.send(availableQualities);
+            // });
 
-            hls.attachMedia(video);
-            return hls;
+            // hls.on(Hls.Events.LEVEL_SWITCHED, function(_, data) {
+            //     app.ports.polymnyVideoNowHasQuality.send({
+            //         auto: hls.autoLevelEnabled,
+            //         height: hls.levels[data.level].height
+            //     });
+            // })
+
+            // hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, function(_, data) {
+            //     app.ports.polymnyVideoNowHasSubtitles.send(data.subtitleTracks);
+            // });
+
+            // hls.on(Hls.Events.SUBTITLE_TRACK_SWITCH, function(_, data) {
+            //     app.ports.polymnyVideoNowHasSubtitleTrack.send(data.id === -1 ? null : hls.subtitleTracks[data.id]);
+            // });
+
+            // hls.attachMedia(video);
+            // return hls;
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             initVideo(arg, app, video);
         }
@@ -136,7 +154,7 @@ const PolymnyVideo = (function() {
                 resizeObserver.observe(video);
 
                 if (arg.url.endsWith('.m3u8')) {
-                    hls = initHls(arg, app, video);
+                    hls = initShaka(arg, app, video);
                 } else {
                     initVideo(arg, app, video);
                 }
