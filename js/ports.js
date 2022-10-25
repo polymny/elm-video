@@ -145,6 +145,10 @@ const PolymnyVideo = (function() {
                     video.currentTime = arg.startTime;
                 }
 
+                if (arg.muted === true) {
+                    video.muted = true;
+                }
+
                 if (arg.autoplay) {
                     let promise = video.play();
                     if (promise !== undefined) {
@@ -211,7 +215,7 @@ const PolymnyVideo = (function() {
 
         app.ports.polymnyVideoSetVolume.subscribe(function(arg) {
             const video = document.getElementById(arg[0]);
-            video.volume = arg[1].volume;
+            video.volume = Math.max(0, Math.min(1, arg[1].volume));
             video.muted = arg[1].muted;
         });
 
