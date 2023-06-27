@@ -413,13 +413,18 @@ miniature model =
                     "miniature-" ++ String.padLeft 3 '0' (String.fromInt miniatureId) ++ ".png"
 
                 miniatureUrl =
-                    model.url
-                        |> String.split "/"
-                        |> List.reverse
-                        |> List.drop 1
-                        |> (\list -> miniatureIdString :: list)
-                        |> List.reverse
-                        |> String.join "/"
+                    case model.miniaturesUrl of
+                        Just l ->
+                            List.drop miniatureId l |> List.head |> Maybe.withDefault ""
+
+                        _ ->
+                            model.url
+                                |> String.split "/"
+                                |> List.reverse
+                                |> List.drop 1
+                                |> (\list -> miniatureIdString :: list)
+                                |> List.reverse
+                                |> String.join "/"
 
                 width =
                     toFloat (Tuple.first model.playerSize) / 5 |> round

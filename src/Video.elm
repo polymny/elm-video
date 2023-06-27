@@ -50,6 +50,7 @@ type alias Video =
     , subtitles : List SubtitleTrack
     , subtitleTrack : Maybe SubtitleTrack
     , showMiniature : Maybe ( Int, Int )
+    , miniaturesUrl : Maybe (List String)
     , ready : Bool
     , mobile : Bool
     , enableMiniatures : Bool
@@ -64,6 +65,7 @@ type alias Config =
     , id : String
     , autoplay : Bool
     , enableMiniatures : Bool
+    , miniaturesUrl : Maybe (List String)
     , startTime : Maybe String
     , muted : Bool
     }
@@ -101,6 +103,7 @@ fromConfig config =
       , ready = False
       , mobile = False
       , enableMiniatures = config.enableMiniatures
+      , miniaturesUrl = config.miniaturesUrl
       , startTime = startTime
       , holdingSeek = False
       , holdingVolume = False
@@ -141,12 +144,18 @@ fromValue flags =
         muted =
             Decode.decodeValue (Decode.field "muted" Decode.bool) flags
                 |> Result.withDefault False
+
+        miniaturesUrl =
+            Decode.decodeValue (Decode.field "miniaturesUrl" (Decode.list Decode.string)) flags
+                |> Result.map Just
+                |> Result.withDefault Nothing
     in
     fromConfig
         { url = url
         , id = id
         , autoplay = autoplay
         , enableMiniatures = enableMiniatures
+        , miniaturesUrl = miniaturesUrl
         , startTime = startTime
         , muted = muted
         }
