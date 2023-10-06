@@ -37,7 +37,7 @@ embedElement model =
                 :: Element.htmlAttribute (Html.Attributes.id (model.id ++ "-full"))
                 :: Events.player
             )
-            (Element.html (Html.video (Html.Attributes.class "wf" :: Events.video model) []))
+            (Element.html (videoElement model (Html.Attributes.class "wf" :: Events.video model) []))
 
 
 fullpage : Video -> Html.Html Video.Msg
@@ -82,7 +82,7 @@ fullpageElement model =
             :: Events.player
         )
         (Element.html
-            (Html.video
+            (videoElement model
                 (Html.Attributes.style "position" "absolute"
                     :: Html.Attributes.width w
                     :: Html.Attributes.height h
@@ -93,6 +93,16 @@ fullpageElement model =
                 []
             )
         )
+
+
+videoElement : Video -> (List (Html.Attribute Video.Msg) -> List (Html.Html Video.Msg) -> Html.Html Video.Msg)
+videoElement model =
+    case model.customElement of
+        Just x ->
+            Html.node x
+
+        _ ->
+            Html.video
 
 
 overlay : Video -> Element Video.Msg

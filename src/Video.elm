@@ -57,6 +57,7 @@ type alias Video =
     , startTime : Maybe Float
     , holdingSeek : Bool
     , holdingVolume : Bool
+    , customElement : Maybe String
     }
 
 
@@ -68,6 +69,7 @@ type alias Config =
     , miniaturesUrl : Maybe (List String)
     , startTime : Maybe String
     , muted : Bool
+    , customElement : Maybe String
     }
 
 
@@ -107,6 +109,7 @@ fromConfig config =
       , startTime = startTime
       , holdingSeek = False
       , holdingVolume = False
+      , customElement = config.customElement
       }
     , init
         { id = config.id
@@ -114,6 +117,7 @@ fromConfig config =
         , autoplay = config.autoplay
         , startTime = startTime
         , muted = config.muted
+        , customElement = config.customElement
         }
     )
 
@@ -149,6 +153,11 @@ fromValue flags =
             Decode.decodeValue (Decode.field "miniaturesUrl" (Decode.list Decode.string)) flags
                 |> Result.map Just
                 |> Result.withDefault Nothing
+
+        customElement =
+            Decode.decodeValue (Decode.field "customElement" Decode.string) flags
+                |> Result.map Just
+                |> Result.withDefault Nothing
     in
     fromConfig
         { url = url
@@ -158,6 +167,7 @@ fromValue flags =
         , miniaturesUrl = miniaturesUrl
         , startTime = startTime
         , muted = muted
+        , customElement = customElement
         }
 
 
@@ -498,6 +508,7 @@ type alias InitAttr =
     , autoplay : Bool
     , startTime : Maybe Float
     , muted : Bool
+    , customElement : Maybe String
     }
 
 
