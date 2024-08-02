@@ -75,7 +75,7 @@ const PolymnyVideo = (function() {
             hls.startLevel = -1;
             hls.loadSource(arg.url);
 
-            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+            hls.on(Hls.Events.MANIFEST_PARSED, function(_, data) {
                 const availableQualities = hls.levels.map((l) => l.height);
                 availableQualities.unshift(0);
                 app.ports.polymnyVideoNowHasQualities.send(availableQualities);

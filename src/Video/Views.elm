@@ -311,12 +311,19 @@ buttonBar model =
             [ playPauseButton model
             , volumeButton model
             , volumeBar model
-            , Element.el
-                [ Element.moveDown 2.5
-                , Element.centerY
-                , Element.paddingEach { left = 10, right = 0, top = 0, bottom = 0 }
-                ]
-                (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
+            , if model.live then
+                Element.row [ Element.spacing 10, Element.centerY ]
+                    [ Element.el [ Font.color <| Element.rgb255 255 0 0 ] <| Element.text "●"
+                    , Element.el [ Element.moveDown 2.5 ] <| Element.text "LIVE"
+                    ]
+
+              else
+                Element.el
+                    [ Element.moveDown 2.5
+                    , Element.centerY
+                    , Element.paddingEach { left = 10, right = 0, top = 0, bottom = 0 }
+                    ]
+                    (Element.text (formatTime model.position ++ " / " ++ formatTime model.duration))
             ]
         , Element.row [ Element.alignRight, Element.spacing 10 ]
             [ subtitlesButton model
@@ -357,16 +364,24 @@ seekbar model =
                 Element.none
 
         loadedElement =
-            Element.row
-                [ Element.width Element.fill
-                , Element.height (Element.px 5)
-                , Element.centerY
-                , Border.rounded 5
-                ]
-                (List.map showRange loadedToShow)
+            if model.live then
+                Element.none
+
+            else
+                Element.row
+                    [ Element.width Element.fill
+                    , Element.height (Element.px 5)
+                    , Element.centerY
+                    , Border.rounded 5
+                    ]
+                    (List.map showRange loadedToShow)
 
         remaining =
-            round ((model.duration - model.position) * 1000)
+            if model.live then
+                0
+
+            else
+                round ((model.duration - model.position) * 1000)
     in
     Element.row
         [ Element.width Element.fill
@@ -751,10 +766,14 @@ fullscreenButton model =
 
 speedButton : Video -> Element Video.Msg
 speedButton model =
-    Input.button [ boxShadowNone ]
-        { label = icon model Material.Icons.speed
-        , onPress = Just (Video.ToggleSettings Video.Speed)
-        }
+    if model.live then
+        Element.none
+
+    else
+        Input.button [ boxShadowNone ]
+            { label = icon model Material.Icons.speed
+            , onPress = Just (Video.ToggleSettings Video.Speed)
+            }
 
 
 subtitlesButton : Video -> Element Video.Msg

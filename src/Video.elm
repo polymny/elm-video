@@ -31,6 +31,7 @@ type alias Video =
     , url : String
     , id : String
     , playing : Bool
+    , live : Bool
     , position : Float
     , duration : Float
     , loaded : List ( Float, Float )
@@ -65,6 +66,7 @@ type alias Config =
     { url : String
     , id : String
     , autoplay : Bool
+    , live : Maybe Bool
     , enableMiniatures : Bool
     , miniaturesUrl : Maybe (List String)
     , startTime : Maybe String
@@ -83,6 +85,7 @@ fromConfig config =
       , url = config.url
       , id = config.id
       , playing = False
+      , live = config.live |> Maybe.withDefault False
       , position = 0
       , duration = 0
       , loaded = []
@@ -137,6 +140,10 @@ fromValue flags =
             Decode.decodeValue (Decode.field "autoplay" Decode.bool) flags
                 |> Result.withDefault False
 
+        live =
+            Decode.decodeValue (Decode.maybe (Decode.field "live" Decode.bool)) flags
+                |> Result.withDefault Nothing
+
         enableMiniatures =
             Decode.decodeValue (Decode.field "enableMiniatures" Decode.bool) flags
                 |> Result.withDefault False
@@ -163,6 +170,7 @@ fromValue flags =
         { url = url
         , id = id
         , autoplay = autoplay
+        , live = live
         , enableMiniatures = enableMiniatures
         , miniaturesUrl = miniaturesUrl
         , startTime = startTime
