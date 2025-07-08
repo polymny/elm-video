@@ -11,6 +11,7 @@ port module Video exposing
     , fromValue
     , init
     , isMobile
+    , nowHasActiveCue
     , nowHasPlayerSize
     , nowHasQualities
     , nowHasQuality
@@ -49,6 +50,7 @@ type alias Video =
     , playbackRate : Float
     , settings : Maybe Settings
     , subtitles : List SubtitleTrack
+    , activeCue : Maybe String
     , subtitleTrack : Maybe SubtitleTrack
     , showMiniature : Maybe ( Int, Int )
     , miniaturesUrl : Maybe (List String)
@@ -103,6 +105,7 @@ fromConfig config =
       , playbackRate = 1
       , settings = Nothing
       , subtitles = []
+      , activeCue = Nothing
       , subtitleTrack = Nothing
       , showMiniature = Nothing
       , ready = False
@@ -198,6 +201,7 @@ type alias SubtitleTrack =
 type Msg
     = Noop
     | ResetTimer
+    | ResetTimerOrHideOverlay
     | PlayPause
     | Seek Float (Maybe Decode.Value)
     | Unseek Decode.Value
@@ -227,6 +231,7 @@ type Msg
     | NowHasSubtitles (List SubtitleTrack)
     | NowHasSubtitleTrack (Maybe SubtitleTrack)
     | NowHasMiniature (Maybe ( Int, Int ))
+    | NowHasActiveCue (Maybe String)
     | AutoplayRefused
     | IsMobile Bool
 
@@ -263,6 +268,13 @@ update msg model =
 
         ResetTimer ->
             ( modelResetTimer, Cmd.none )
+
+        ResetTimerOrHideOverlay ->
+            if model.animationFrame - model.overlayTimer > fadeTimerOverlay.disappear then
+                ( modelResetTimer, Cmd.none )
+
+            else
+                ( { model | overlayTimer = model.animationFrame - fadeTimerOverlay.fade }, Cmd.none )
 
         PlayPause ->
             let
@@ -385,7 +397,11 @@ update msg model =
             )
 
         MouseMove ->
-            ( modelResetTimer, Cmd.none )
+            if model.mobile then
+                ( model, Cmd.none )
+
+            else
+                ( modelResetTimer, Cmd.none )
 
         NowPlaying ->
             ( { model | playing = True, hasStarted = True }, Cmd.none )
@@ -431,6 +447,9 @@ update msg model =
 
         NowHasSubtitleTrack track ->
             ( { model | subtitleTrack = track }, Cmd.none )
+
+        NowHasActiveCue cue ->
+            ( { model | activeCue = cue }, Cmd.none )
 
         NowHasMiniature miniature ->
             ( { model | showMiniature = miniature }, Cmd.none )
@@ -661,7 +680,11 @@ port polymnyVideoSetSeekbarCapture : ( String, Decode.Value ) -> Cmd msg
 
 setSeekbarCapture : Video -> Decode.Value -> Cmd msg
 setSeekbarCapture model pointerId =
-    polymnyVideoSetSeekbarCapture ( model.id, pointerId )
+    if model.mobile then
+        Cmd.none
+
+    else
+        polymnyVideoSetSeekbarCapture ( model.id, pointerId )
 
 
 port polymnyVideoReleaseSeekbarCapture : ( String, Decode.Value ) -> Cmd msg
@@ -669,7 +692,11 @@ port polymnyVideoReleaseSeekbarCapture : ( String, Decode.Value ) -> Cmd msg
 
 releaseSeekbarCapture : Video -> Decode.Value -> Cmd msg
 releaseSeekbarCapture model pointerId =
-    polymnyVideoReleaseSeekbarCapture ( model.id, pointerId )
+    if model.mobile then
+        Cmd.none
+
+    else
+        polymnyVideoReleaseSeekbarCapture ( model.id, pointerId )
 
 
 port polymnyVideoSetVolumeBarCapture : ( String, Decode.Value ) -> Cmd msg
@@ -677,7 +704,11 @@ port polymnyVideoSetVolumeBarCapture : ( String, Decode.Value ) -> Cmd msg
 
 setVolumeBarCapture : Video -> Decode.Value -> Cmd msg
 setVolumeBarCapture model pointerId =
-    polymnyVideoSetVolumeBarCapture ( model.id, pointerId )
+    if model.mobile then
+        Cmd.none
+
+    else
+        polymnyVideoSetVolumeBarCapture ( model.id, pointerId )
 
 
 port polymnyVideoReleaseVolumeBarCapture : ( String, Decode.Value ) -> Cmd msg
@@ -685,4 +716,16 @@ port polymnyVideoReleaseVolumeBarCapture : ( String, Decode.Value ) -> Cmd msg
 
 releaseVolumeBarCapture : Video -> Decode.Value -> Cmd msg
 releaseVolumeBarCapture model pointerId =
-    polymnyVideoReleaseVolumeBarCapture ( model.id, pointerId )
+    if model.mobile then
+        Cmd.none
+
+    else
+        polymnyVideoReleaseVolumeBarCapture ( model.id, pointerId )
+
+
+port polymnyVideoNowHasActiveCue : (Maybe String -> msg) -> Sub msg
+
+
+nowHasActiveCue : (Maybe String -> msg) -> Sub msg
+nowHasActiveCue =
+    polymnyVideoNowHasActiveCue

@@ -164,21 +164,27 @@ overlay model =
                 , pointerEventsNone
                 , Element.inFront
                     (Element.column [ Element.width Element.fill, Element.alignBottom ]
-                        [ Element.row [ Element.width Element.fill ]
-                            [ Element.el
-                                (Element.width Element.fill
-                                    :: Element.height Element.fill
-                                    :: Events.overlay model
-                                )
-                                Element.none
-                            , settings model
-                            ]
-                        , controls model
-                        ]
+                        [ cueView model, controls model ]
                     )
                 ]
                 Element.none
         )
+
+
+cueView : Video -> Element Video.Msg
+cueView model =
+    case ( model.subtitleTrack, model.activeCue ) of
+        ( Just _, Just s ) ->
+            Element.row
+                [ Element.centerX
+                , Element.htmlAttribute (Html.Attributes.style "text-shadow" "-3px -3px 3px black, 3px -3px 3px black, -3px 3px 3px black, 3px 3px 3px black")
+                , Element.paddingEach { bottom = 25, top = 0, right = 0, left = 0 }
+                ]
+                [ Element.text s
+                ]
+
+        _ ->
+            Element.none
 
 
 settings : Video -> Element Video.Msg
@@ -300,6 +306,12 @@ controls model =
 
           else
             Background.gradient { angle = 0, steps = [ Element.rgba 0 0 0 0.75, Element.rgba 0 0 0 0 ] }
+        , Element.above
+            (Element.row [ Element.width Element.fill ]
+                [ Element.el [ Element.width Element.fill ] Element.none
+                , settings model
+                ]
+            )
         ]
         (Element.column [ Element.width Element.fill ] [ seekbar model, buttonBar model ])
 
@@ -631,14 +643,7 @@ fadeElement fadeTimer current attr el =
         Element.none
 
     else
-        animatedEl
-            (if current > fadeTimer.fade then
-                fadeOut
-
-             else
-                fadeIn
-            )
-            attr
+        Element.el (Element.alpha ((fadeTimer.disappear - current) / (fadeTimer.disappear - fadeTimer.fade)) :: attr)
             el
 
 
